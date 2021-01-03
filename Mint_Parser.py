@@ -4,9 +4,6 @@ import json
 import re
 import os
 
-trans_file = "transactions.csv"
-output_file = "transactions_parsed.csv"
-output_monthly_file = "transactions_parsed_monthly.csv"
 
 def get_args():
     action_choices = ["ParseTransactions"]
@@ -21,10 +18,10 @@ def get_args():
 
     parser = argparse.ArgumentParser(description='Used to process arguments passed to the Mint_Parser.py.')
 
-    parser.add_argument('--action', nargs='+', choices=action_choices, help='List of actions to perform. {}'.format(add_help))
-    parser.add_argument('--transactions_file', default="transactions.csv", help='transaction file export from Mint. {}'.format(add_help))
+    parser.add_argument('--action', nargs='+', choices=action_choices, help='List of actions to perform.  Currently there is only one action that can be passed, which is ParseTransactions. {}'.format(add_help))
+    parser.add_argument('--transactions_file', default="transactions.csv", help='Used to point to the transaction file that was exported from Mint. Default is transactions.csv. {}'.format(add_help))
     parser.add_argument('--pattern_file', default="category_patterns.json", help='JSON file that contains a series of patterns. See category_patterns.json.template for an example. The patterns are regulare expressions. {}'.format(add_help))
-    parser.add_argument('--output_file', default="output.json", help='File used to write output to. {}'.format(add_help))
+    parser.add_argument('--output_file', default="output.json", help='File to output the results of matching the patterns from the --pattern_file argument. {}'.format(add_help))
 
     args = parser.parse_args()
 
