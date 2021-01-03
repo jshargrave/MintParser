@@ -1,27 +1,62 @@
 from datetime import datetime
+import argparse
 import json
 import re
+import os
 
 trans_file = "transactions.csv"
 output_file = "transactions_parsed.csv"
 output_monthly_file = "transactions_parsed_monthly.csv"
 
+def get_args():
+    action_choices = ["ParseTransactions"]
+    add_help = "Pass the -h argument for more information"
+    actions_args_dict = {
+        "ParseTransactions": [
+            "transactions_file",
+            "pattern_file",
+            "output_file",
+        ],
+    }
 
+    parser = argparse.ArgumentParser(description='Used to process arguments passed to the Mint_Parser.py.')
+
+    parser.add_argument('--action', nargs='+', choices=action_choices, help='List of actions to perform. {}'.format(add_help))
+    parser.add_argument('--transactions_file', default="transactions.csv", help='transaction file export from Mint. {}'.format(add_help))
+    parser.add_argument('--pattern_file', default="category_patterns.json", help='JSON file that contains a series of patterns. See category_patterns.json.template for an example. The patterns are regulare expressions. {}'.format(add_help))
+    parser.add_argument('--output_file', default="output.json", help='File used to write output to. {}'.format(add_help))
+
+    args = parser.parse_args()
+
+    # Check that arguments are valid
+    if "ParseTransactions" in args.action and not os.path.exists(args.transactions_file):
+        msg = "Error: --transactions_file must point to a valid file when passing the argument --action ParseTransactions."
+        raise argparse.ArgumentError(msg)
+    if "ParseTransactions" in args.action and not os.path.exists(args.pattern_file):
+        msg = "Error: --pattern_file must point to a valid file when passing the argument --action ParseTransactions."
+        raise argparse.ArgumentError(msg)
+
+    return args
 
 
 def main():
-    file_in = open(trans_file, 'r')
-    file_in_cat = open("category_patterns.json", 'r')
-    file_out = open(output_file, 'w')
-    file_out_monthly = open(output_monthly_file, 'w')
+    args = get_args()
+    for a in args.action:
+        if a == "ParseTransactions":
+            parse_transactions(args)
 
-    category_dict_pattern = json.load(file_in_cat)
+
+def parse_transactions(args):
     category_dict = {}
 
-    description_list = []
+    # Read in all transactions
+    with open(args.transactions_file, 'r') as file_in_transactions:
+        file_lines = file_in_transactions.readlines()
 
-    # Get next line from file
-    file_lines = file_in.readlines()
+    # Read in all patterns
+    with open(args.pattern_file, 'r') as file_in_pattern:
+        category_dict_pattern = json.load(file_in_pattern)
+
     count = 0
     for line in file_lines:
         # Don't parse first line
@@ -41,7 +76,7 @@ def main():
 
         # Extract month
         match = re.match("([0-9]+)/[0-9]+/([0-9]+)", line_split[0])
-        month_str = "{}-{}".format(match.group(1), match.group(2))
+        month_str = "{1}-{0}".format(match.group(1), match.group(2))
 
         # Extract amount
         amount_flt = float(line_split[3])
@@ -71,6 +106,8 @@ def main():
                     break
             if found_match:
                 break
+
+        # Record the transaction if no pattern matched it
         if not found_match:
             if "NO_MATCH" not in category_dict.keys():
                 category_dict["NO_MATCH"] = {"Transactions": [line]}
@@ -82,19 +119,13 @@ def main():
                 category_dict["NO_MATCH"] = {"Monthly": [line]}
         count += 1
 
-        # Extract description
-        match = re.match("\"[0-9/]+\",\"([a-zA-Z0-9-#*.'-~&%$ ]+)\"", line)
-        if match:
-            if match.group(1) not in description_list:
-                description_list.append(match.group(1))
-        else:
-            print("failed to match with\n{}".format(line))
+    # Write dictionary to json file
+    with open(args.output_file, 'w') as file_out:
+        json.dump(category_dict, file_out, sort_keys=True, indent=4, ensure_ascii=False)
 
-    description_list.sort()
 
-    file_in.close()
-    file_out.close()
-    file_out_monthly.close()
+def format_transactions(args):
+    pass
 
 
 if __name__ == "__main__":

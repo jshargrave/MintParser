@@ -1,2 +1,4 @@
 Env
 .idea
+*.json
+*.csv
