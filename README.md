@@ -2,7 +2,7 @@
 Used to parse the transactions exported from Mint into useful categories to perform analysis on
 
 # Arguments
-# <a name="arguments"></a> DETAIL SECTION
+# <a name="arguments"></a>
 ## --action
 List of actions to perform.  Currently there is only one action that can be passed, which is ParseTransactions.
 ## --transactions_file
