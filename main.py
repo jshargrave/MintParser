@@ -1,403 +1,26 @@
-import datetime
+from datetime import datetime
+import json
 import re
 
 trans_file = "transactions.csv"
 output_file = "transactions_parsed.csv"
 output_monthly_file = "transactions_parsed_monthly.csv"
 
-category_dict_pattern = {
-    "INCOME": [
-        ".*\"eCheck Deposit\".*",
-        ".*\"THE BOEING COMPA DIR DEP~ Future Amount: [0-9.]+ ~ Tran: DDI\".*",
-        ".*\"THE BOEING COMPA DIR DEP~ Future Amount: [0-9.]+ ~ Tran: DDIR\".*",
-        ".*\"Boeing Compa Dir\".*",
-        ".*\"MO State Tax\".*",
-        ".*\"Congrats Cash Rewards\".*",
-        ".*\"Echeck Deposit\".*",
-        ".*\"Employee Contribution \(Tax year: [0-9]+\)\".*",
-        ".*\"Employer Contribution \(Tax year: [0-9]+\)\".*",
-        ".*\"Healthequity Healthequi\".*",
-        ".*\"Interest For [a-zA-Z0-9-]+\".*",
-        ".*\"Interest for [a-zA-Z0-9-]+\".*",
-        ".*\"Interest Paid\".*",
-        ".*\"Internal Revenue Service\".*",
-    ],
-    "SPENDING": [
-        ".*\"1-800-Contacts\".*",
-        ".*\"1-800-Flowers\".*",
-        ".*\"2AMMUNITION 800-518-9180 FL\".*",
-        ".*\"3103-DEN COFFEE BEAN A ADAMS, DENVER CO\".*",
-        ".*\"5GUYS 4018 QSR FENTON MO\".*",
-        ".*\"A. LINCOLN PRES MUSEUM 2175588844 IL\".*",
-        ".*\"ACTBLUE\*BERNIE\.2020 ACTBLUECC\.COM MA\".*",
-        ".*\"Adam\".*",
-        ".*\"Aldi\".*",
-        ".*\"Alliance Innovations L\".*",
-        ".*\"Amazon\".*",
-        ".*\"Ameren\".*",
-        ".*\"American Tx\".*",
-        ".*\"Annual Membership Fee\".*",
-        ".*\"Aramark\".*",
-        ".*\"Audible.com\".*",
-        ".*\"AutoZone\".*",
-        ".*\"Autopay Rautopay Auto\".*",
-        ".*\"Awl Pearson Education\".*",
-        ".*\"Awtechgroup Ca\".*",
-        ".*\"B&H Photo\".*",
-        ".*\"BASS PRO ONLINE U.S. 8002277776 MO\".*",
-        ".*\"BJ FP GARAGE NO 1 SAINT LOUIS MO\".*",
-        ".*\"BJ SG EXIT NO 1 SAINT LOUIS MO\".*",
-        ".*\"BP\".*",
-        ".*\"Backcountry\".*",
-        ".*\"Balkan Treat Box LLC\".*",
-        ".*\"Bcy Backcountry.com Ut\".*",
-        ".*\"Best Buy\".*",
-        ".*\"Bierwerks Brewe\".*",
-        ".*\"Big Bend Auto Center\".*",
-        ".*\"Big Bend Automotive\".*",
-        ".*\"Big O\".*",
-        ".*\"Big Rs Bar\".*",
-        ".*\"Brick Front Grill LLC\".*",
-        ".*\"Brondell Inc.\".*",
-        ".*\"Brooklyn Bedding LLC\".*",
-        ".*\"Burpee Seed Pa\".*",
-        ".*\"Buyautoparts Com\".*",
-        ".*\"CITYOFSTLOUIS-PARKING ST LOUIS MO\".*",
-        ".*\"CLIMB SO ILL INC ST LOUIS MO\".*",
-        ".*\"Cafe Osage Mo\".*",
-        ".*\"Canvas\".*",
-        ".*\"Caribe Royale Resort\".*",
-        ".*\"Casey's\".*",
-        ".*\"Cashback Bonus Redemption\".*",
-        ".*\"Cb Computer Eb\".*",
-        ".*\"Cerberus Brewing C\".*",
-        ".*\"Charter Communications\".*",
-        ".*\"Check\".*",
-        ".*\"Check Paid #[0-9]+\".*",
-        ".*\"Chili's\".*",
-        ".*\"Chimi's Fresh Mex\".*",
-        ".*\"Chipotle\".*",
-        ".*\"Circle K\".*",
-        ".*\"City of St Louis\".*",
-        ".*\"Cityofstlouis Parking St\".*",
-        ".*\"Climb So Ill\".*",
-        ".*\"Colonial Parking Inc\".*",
-        ".*\"Company Store\".*",
-        ".*\"Cork N Bottle\".*",
-        ".*\"Country Mart\".*",
-        ".*\"Court House Sub Shop\".*",
-        ".*\"Cove West Rent\".*",
-        ".*\"Craft Beer Cellar Sedalia\".*",
-        ".*\"Creve Coeur\".*",
-        ".*\"Crossrope LLC\".*",
-        ".*\"DSW Designer Shoe Warehouse\".*",
-        ".*\"Days Inn\".*",
-        ".*\"Dierberg's\".*",
-        ".*\"Dncss Springfieldbbcon R\".*",
-        ".*\"Dollar General\".*",
-        ".*\"Dollar Shave Club\".*",
-        ".*\"Dorcousa Ca\".*",
-        ".*\"Dutchclipsl Ca\".*",
-        ".*\"ELITEFTS.COM LONDON OH\".*",
-        ".*\"EMBPHONESIN EB 4029357733 CA\".*",
-        ".*\"Edward Jones\".*",
-        ".*\"Element Vape\".*",
-        ".*\"Enviornmental Services\".*",
-        ".*\"Etsy.com\".*",
-        ".*\"Every Body Massage\".*",
-        ".*\"Experian\".*",
-        ".*\"Exxon\".*",
-        ".*\"FAMILYFABRICSUSA 8446593879 NY\".*",
-        ".*\"FREETAXUSA.COM 801-812-1040 UT\".*",
-        ".*\"Fax.com\".*",
-        ".*\"Fidelity Comm Web\".*",
-        ".*\"Fin Feather Fur Outfitters\".*",
-        ".*\"First Watch Restaurant\".*",
-        ".*\"Fitters 5th St\".*",
-        ".*\"Five Guys\".*",
-        ".*\"Foreign Transaction Fee\".*",
-        ".*\"Foundation Grounds\".*",
-        ".*\"Foxy Fit Ca\".*",
-        ".*\"Freetaxusa.com Ut\".*",
-        ".*\"Frontier Web\".*",
-        ".*\"GEORGEASAAD EB 4029357733 CA\".*",
-        ".*\"GMCFSU22849 4029357733 CA\".*",
-        ".*\"GOODR LLC 3039036042 CA\".*",
-        ".*\"GOVERNMENTAUCTIONS.ORG 8005152431 NY\".*",
-        ".*\"Gaia Gps\".*",
-        ".*\"Galen Ca\".*",
-        ".*\"Garden Heights Nursery Inc\".*",
-        ".*\"Gateway\".*",
-        ".*\"Glacier Family Foods\".*",
-        ".*\"Glacier Park Boat\".*",
-        ".*\"Gold Camp Brewing\".*",
-        ".*\"Gordon Telepun G\".*",
-        ".*\"Grains & Taps\".*",
-        ".*\"Guys Louis Mo 0481 Qsr Street\".*",
-        ".*\"Half.com\".*",
-        ".*\"Harbor Freight\".*",
-        ".*\"Harbor Freight Tools\".*",
-        ".*\"Hardcase Ca\".*",
-        ".*\"Hartke Nursery St\".*",
-        ".*\"Heavy Riff Brewing\".*",
-        ".*\"Heavy Riff Brewing Company, LLC\".*",
-        ".*\"Help Hugh Mungus\".*",
-        ".*\"Hillsborough Cinemas\".*",
-        ".*\"Himalayan Yak Restaurant\".*",
-        ".*\"Home Depot\".*",
-        ".*\"Home Goods\".*",
-        ".*\"Honesttrade Ca\".*",
-        ".*\"Hooters\".*",
-        ".*\"Hub Grill Bar\".*",
-        ".*\"Humblebundl Hum Ca\".*",
-        ".*\"Hy-Vee\".*",
-        ".*\"IDENTOGO - TSA PRECHEC BILLERICA MA\".*",
-        ".*\"Iceman Flemington\".*",
-        ".*\"Icing\".*",
-        ".*\"Ieee Cb Conference\".*",
-        ".*\"Instacart Ca\".*",
-        ".*\"Interest Charge Purchases\".*",
-        ".*\"Interest Charged\".*",
-        ".*\"Investment Admin Fee [A-Za-z]+ [0-9]+. Average invested balance of [0-9,.$]+ at [0-9.%]+\".*",
-        ".*\"Investment Admin Fee [A-Za-z]+ [0-9]+. Average invested balance at [0-9,.$]+ at [0-9.%]+\".*",
-        ".*\"Investor Choice [a-zA-Z]+ [0-9.]+ Average invested balance of [0-9,.$]+ at [0-9.%]+\".*",
-        ".*\"JULLUPLUS 4029357733 CA\".*",
-        ".*\"Jacks\".*",
-        ".*\"Jbs Piano Bar\".*",
-        ".*\"Jiffy Mini Mart\".*",
-        ".*\"Jimmy John's\".*",
-        ".*\"Kings Cooking Nj\".*",
-        ".*\"Kohl's\".*",
-        ".*\"Kroger\".*",
-        ".*\"Lcd Best Ca\".*",
-        ".*\"Llywelyn Pub St\".*",
-        ".*\"Love's Country Stores\".*",
-        ".*\"Lowe's\".*",
-        ".*\"Lyft\".*",
-        ".*\"MAI Lee Restaurant\".*",
-        ".*\"MEMBERSHIP FEE MAR 20-FEB 21\".*",
-        ".*\"MISSOURIBOTANICALGARDE ST. LOUIS MO\".*",
-        ".*\"MO BOTANICAL GARDEN #7 3145779439 MO\".*",
-        ".*\"MO BOTANICAL GARDEN #7 SAINT LOUIS MO\".*",
-        ".*\"MPC 37 FESTUS MO\".*",
-        ".*\"MY PROTEIN MYPROTEIN.COM CA\".*",
-        ".*\"Marriott\".*",
-        ".*\"Marshalls\".*",
-        ".*\"Medical Transport He\".*",
-        ".*\"Menard\".*",
-        ".*\"Meundies Com Ca\".*",
-        ".*\"Meundies.com Ca\".*",
-        ".*\"Midwest\".*",
-        ".*\"Mikes Car Care Center\".*",
-        ".*\"Missouri S & T\".*",
-        ".*\"Mo Botanical Garden\".*",
-        ".*\"Moosejaw\".*",
-        ".*\"Mpc\".*",
-        ".*\"Mr. Tires, Inc.\".*",
-        ".*\"My Protein Myprotein.com\".*",
-        ".*\"NGUYENHUNGQ EB 4029357733 CA\".*",
-        ".*\"NORDVPN SUBSCRIPTION 3022619338 NY\".*",
-        ".*\"Newegg\".*",
-        ".*\"Nintendo Digital\".*",
-        ".*\"Nj Transit Ca\".*",
-        ".*\"Njt Nwk Int\".*",
-        ".*\"Nordstrom\".*",
-        ".*\"Northern Brewer Mnnorthern\".*",
-        ".*\"Nudo House Stl\".*",
-        ".*\"Number Pho\".*",
-        ".*\"Nw Mobile Westline\".*",
-        ".*\"O'Reilly Auto Parts\".*",
-        ".*\"OFFER 04 MOVED TO STANDARD PURCH\".*",
-        ".*\"OLIVE SUPERMARKET UNIVERSITY CI MO\".*",
-        ".*\"OUTDOORLIMITED.COM 9109904579 NC\".*",
-        ".*\"Oculus\".*",
-        ".*\"Offer Promotional Apr\".*",
-        ".*\"Olive Fee Fee Auto Care\".*",
-        ".*\"Olive Street Cafe LLC\".*",
-        ".*\"Omni Severin\".*",
-        ".*\"Omni Severin Indianapolis\".*",
-        ".*\"Organic Climbing, LLC\".*",
-        ".*\"Ozark Coffee Company\".*",
-        ".*\"PARKINGMETER4 87724279 CHICAGO IL\".*",
-        ".*\"PLEXINCPASS YEARLY 4157977539 CA\".*",
-        ".*\"Palmetto State Armory, LLC\".*",
-        ".*\"Panera Bread\".*",
-        ".*\"Papa John's\".*",
-        ".*\"Pescience LLC\".*",
-        ".*\"Petro Mart\".*",
-        ".*\"Phillips 66\".*",
-        ".*\"Playstation Network\".*",
-        ".*\"Popeye's\".*",
-        ".*\"Price Chopper\".*",
-        ".*\"Quality Inn\".*",
-        ".*\"Quick Chek\".*",
-        ".*\"QuikTrip\".*",
-        ".*\"RAKUTEN.COM 800-8000800 CA\".*",
-        ".*\"REI\".*",
-        ".*\"ROBINHOOD Funds\".*",
-        ".*\"Rakuten.com Ca\".*",
-        ".*\"Redbubble\".*",
-        ".*\"Regal Northstar Stadium\".*",
-        ".*\"Rei Saint Louis\".*",
-        ".*\"Richmond Heights Service Company, Inc.\".*",
-        ".*\"River Runners Llc\".*",
-        ".*\"Ruralking Com\".*",
-        ".*\"Russells On Macklind\".*",
-        ".*\"SG Buyers Club Renewal 800-888-5222 MN\".*",
-        ".*\"SOUTH CITY 3146443100 MO\".*",
-        ".*\"SP \* HANKS BELTS 8882292358 NY\".*",
-        ".*\"SQ \*BALKAN TREAT B St Louis MO\".*",
-        ".*\"SQ \*KNEAD BAKEHOUS SAINT LOUIS MO\".*",
-        ".*\"SQU\*KOUNTER KULTUR St Louis MO\".*",
-        ".*\"STEAM PURCHASE 425-9522985 WA\".*",
-        ".*\"SUSHI AI SAINT LOUIS MO\".*",
-        ".*\"SWELLCELLS 4029357733 CA\".*",
-        ".*\"Schnucks\".*",
-        ".*\"Seafood City\".*",
-        ".*\"Shell\".*",
-        ".*\"Sig Sauer Inc.\".*",
-        ".*\"Smiling Toad Brewing\".*",
-        ".*\"SoundCloud Inc San Francisco CA\".*",
-        ".*\"Southwest Airlines\".*",
-        ".*\"Sp Fashion Goods\".*",
-        ".*\"Speedpay Wuamerenmo\".*",
-        ".*\"Sportsman's\".*",
-        ".*\"Sportsmans Guide Mn\".*",
-        ".*\"Spotify\".*",
-        ".*\"Sq Clim St\".*",
-        ".*\"St Louis\".*",
-        ".*\"PBC- ST LOUIS MO3748 SAINT LOUIS MO\\"".*",
-        ".*\"Staples\".*",
-        ".*\"Star of India\".*",
-        ".*\"State Parks\".*",
-        ".*\"Steam Games\".*",
-        ".*\"Steve's Tire By Rictez LLC\".*",
-        ".*\"Stockham's Gas Mart Inc\".*",
-        ".*\"Sugar Fire Smokehouse\".*",
-        ".*\"Sunoco\".*",
-        ".*\"T J Maxx\".*",
-        ".*\"T-Mobile\".*",
-        ".*\"TECHREDO 4029357733 CA\".*",
-        ".*\"THE RAFTING COMPANY STEELVILLE MO\".*",
-        ".*\"TJ Maxx\".*",
-        ".*\"TOASTY SUB MAPLEWOOD MO\".*",
-        ".*\"TRREUSE 4029357733 CA\".*",
-        ".*\"TST\* CHRIS PANCAKE & SAINT LOUIS MO\".*",
-        ".*\"TST\* SUNNY S CANTINA 314-791-5379 MO\".*",
-        ".*\"Taco Bell\".*",
-        ".*\"Target\".*",
-        ".*\"Temp Stop\".*",
-        ".*\"Temp Stop LLC\".*",
-        ".*\"The UPS Store\".*",
-        ".*\"Thepihut Gbr\".*",
-        ".*\"Thermoworks Inc.\".*",
-        ".*\"Toddwgm Ca\".*",
-        ".*\"Trader Joe's\".*",
-        ".*\"Tst Sugarfire Smokeho\".*",
-        ".*\"Tu Transunion Ca\".*",
-        ".*\"Tucanos Brazilian Grill\".*",
-        ".*\"Turning Technologies\".*",
-        ".*\"Turning Technologies LLC\".*",
-        ".*\"USCONNECT CRDNL VEND 1 FENTON MO\".*",
-        ".*\"USPS\".*",
-        ".*\"United Airlines\".*",
-        ".*\"Usconnect Ccvnd Vend\".*",
-        ".*\"VEDDER HOLSTERS 13527296749 FL\".*",
-        ".*\"Vandyzbooks Ca\".*",
-        ".*\"Wal-Mart\".*",
-        ".*\"Walgreens\".*",
-        ".*\"Warby Parker Ny\".*",
-        ".*\"Wendy's\".*",
-        ".*\"Wheelchair Van\".*",
-        ".*\"Whole Foods\".*",
-        ".*\"Wood Farms\".*",
-        ".*\"YMCA\".*",
-        ".*\"Zelle Ghana Paudel\".*",
-        ".*\"Zg Zillowrentals Wa\".*",
-        ".*\"eBay\".*",
-    ],
-    "GIFTS": [
 
-    ],
-    "INVESTING": [
-        ".*\"SCHWAB BROKERAGE MONEYLINK\".*",
-        ".*\"SCHWAB BROKERAGE MONEYLINK~ Future Amount: [0-9\.]+ ~ Tran: ACHDW\".*",
-        ".*\"SCHWAB BROKERAGE MONEYLINK~ Future Amount: [0-9\.]+ ~ Tran: ACHD\".*",
-        ".*\"SCHWAB BROKERAGE MONEYLINK~ Future Amount: [0-9\.]+ ~ Tran: ACH\".*",
-        ".*\"Investment Vigix\".*",
-        ".*\"Investment Viiix\".*",
-        ".*\"Investment Vtabx\".*",
-        ".*\"Investment: VIGIX\".*",
-        ".*\"Investment: VIIIX\".*",
-        ".*\"Investment: VSMAX\".*",
-        ".*\"Investment: VTABX\".*",
-    ],
-    "CREDIT_PAYMENTS": [
-        ".*\"Online Payment\".*",
-        ".*\"Online Thank You\".*",
-        ".*\"ONLINE PAYMENT, THANK YOU\".*",
-        ".*\"CITI AUTOPAY PAYMENT\".*",
-        ".*\"CITI CARD ONLINE PAYMENT\".*",
-        ".*\"Citi Online\".*",
-        ".*\"Citibank Crdt Cd\".*",
-        ".*\"DISCOVER E-PAYMENT\".*",
-        ".*\"Discover E\".*",
-        ".*\"Discover Online\".*",
-        ".*\"Internet Thank You\".*",
-    ],
-    "TRANSFER": [
-        ".*\"Transfer from [a-zA-Z ]+\".*",
-        ".*\"Transfer to [a-zA-Z ]+\".*",
-        ".*\"Requested transfer from ALLY BANK Interest Checking account\".*",
-        ".*\"Requested transfer to ALLY BANK Online Savings account\".*",
-        ".*\"TFR-1060470539\".*",
-        ".*\"FICOCU SV WEBXFR TRANSFER\".*",
-        ".*\"First Community TRANSFER~ Future Amount: [0-9.]+ ~ Tran: ACHDW\".*",
-        ".*\"Hargrave Joseph Simple\".*",
-        ".*\"Internet Transfer Interest\".*",
-        ".*\"Internet Transfer Online\".*",
-        ".*\"Internet transfer from Interest Checking account\".*",
-        ".*\"Internet transfer from Online Savings account\".*",
-        ".*\"Internet transfer to Interest Checking account\".*",
-        ".*\"Internet transfer to Online Savings account\".*",
-        ".*\"Joseph Hargrave Ficocu\".*",
-        ".*\"Overdraft Transfer\".*",
-        ".*\"SCHWAB BROKERAGE MONEYLINK~ Future Amount: [0-9\.]+ ~ Tran: AC\".*",
-
-    ],
-    "OTHER": [
-        ".*\"ATM Fee Refund\".*",
-        ".*\"Balance Forward\".*",
-        ".*\"SECURITY CREDIT-ITEM UNDER INVESTIGATION\".*",
-        ".*\"Small Balance\".*",
-    ],
-    "LOAN_PAYMENTS": [
-        ".*\"DEPT EDUCATION STUDENT LN\".*",
-        ".*\"DEPT EDUCATION STUDENT LN~ Future Amount: [0-9.]+ ~ Tran: ACHDW\".*",
-        ".*\"DEPT EDUCATION STUDENT LN~ Future Amount: [0-9.]+ ~ Tran: ACH\".*",
-        ".*\"Dept Education Student\".*",
-    ],
-    "HEALTH": [
-        ".*\"Blue Cross\".*",
-        ".*\"Total Access Urgent Care, [0-9-]+, MO \(Card Transaction ID: [a-zA-Z0-9]+\)\".*",
-        ".*\"Crown Vision Center\".*",
-        ".*\"Pdp - St Louis -Euclid, St Louis, MO \(Card Transaction ID: [a-zA-Z0-9]+\)\".*",
-        ".*\"Pdp - St Louis -Euclid, 412-373-9682, MO \(Card Transaction ID: [a-zA-Z0-9]+\)\".*",
-    ],
-}
-
-category_dict = {}
 
 
 def main():
     file_in = open(trans_file, 'r')
+    file_in_cat = open("category_patterns.json", 'r')
     file_out = open(output_file, 'w')
     file_out_monthly = open(output_monthly_file, 'w')
+
+    category_dict_pattern = json.load(file_in_cat)
+    category_dict = {}
 
     description_list = []
 
     # Get next line from file
-    #file_str = file_in.read()
     file_lines = file_in.readlines()
     count = 0
     for line in file_lines:
@@ -405,6 +28,24 @@ def main():
         if count == 0:
             count += 1
             continue
+
+        # Split the columns
+        line_split = line.split("\",\"")
+        line_split[0] = line_split[0].lstrip('"')
+        line_split[-1] = line_split[-1].lstrip('"\n')
+
+        # Cleanup line and make date formats match
+        date_obj = datetime.strptime(line_split[0], "%m/%d/%Y")
+        date_str = date_obj.strftime("%m/%d/%Y")
+        line_split[0] = date_str
+
+        # Extract month
+        match = re.match("([0-9]+)/[0-9]+/([0-9]+)", line_split[0])
+        month_str = "{}-{}".format(match.group(1), match.group(2))
+
+        # Extract amount
+        amount_flt = float(line_split[3])
+
         found_match = False
         for key, value in category_dict_pattern.items():
             for pattern in value:
@@ -412,9 +53,19 @@ def main():
                 if match:
                     found_match = True
                     if key not in category_dict.keys():
-                        category_dict[key] = [line]
+                        category_dict[key] = {
+                            "Transactions": [line],
+                            "Total": amount_flt,
+                            "Monthly": {},
+                        }
                     else:
-                        category_dict[key] = category_dict[key] + [line]
+                        category_dict[key]["Transactions"].append(line)
+                        category_dict[key]["Total"] = category_dict[key]["Total"] + amount_flt
+
+                    if month_str not in category_dict[key]["Monthly"].keys():
+                        category_dict[key]["Monthly"][month_str] = amount_flt
+                    else:
+                        category_dict[key]["Monthly"][month_str] = category_dict[key]["Monthly"][month_str] + amount_flt
 
                     # If match was found, then continue to next line
                     break
@@ -422,9 +73,13 @@ def main():
                 break
         if not found_match:
             if "NO_MATCH" not in category_dict.keys():
-                category_dict["NO_MATCH"] = [line]
+                category_dict["NO_MATCH"] = {"Transactions": [line]}
+                category_dict["NO_MATCH"] = {"Total": [line]}
+                category_dict["NO_MATCH"] = {"Monthly": [line]}
             else:
-                category_dict["NO_MATCH"] = category_dict["NO_MATCH"] + [line]
+                category_dict["NO_MATCH"]["Transactions"].append(line)
+                category_dict["NO_MATCH"] = {"Total": [line]}
+                category_dict["NO_MATCH"] = {"Monthly": [line]}
         count += 1
 
         # Extract description
@@ -436,9 +91,6 @@ def main():
             print("failed to match with\n{}".format(line))
 
     description_list.sort()
-
-    #for desc in description_list:
-        #print("\".*{}.*\",".format(desc))
 
     file_in.close()
     file_out.close()
