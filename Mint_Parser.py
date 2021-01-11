@@ -8,20 +8,24 @@ import os
 
 def get_args():
     action_choices = ["CategoriesByPattern", "CategoriesByColumn"]
-    sum_period_choices = ["Daily", "Weekly", "Monthly", "Yearly"]
+    date_period_choices = ["Daily", "Weekly", "Monthly", "Yearly"]
     add_help = "Pass the -h argument for more information"
     actions_args_dict = {
         "CategoriesByPattern": [
             "transactions_file",
             "pattern_file",
             "output_file",
-            "sum_period",
+            "date_period",
+            "date_column",
+            "amount_column",
         ],
         "CategoriesByColumn": [
             "transactions_file",
             "output_file",
-            "column",
-            "sum_period",
+            "date_period",
+            "category_column",
+            "date_column",
+            "amount_column",
         ],
     }
 
@@ -31,8 +35,10 @@ def get_args():
     parser.add_argument('--transactions_file', default="transactions.csv", help='Used to point to the transaction file that was exported from Mint. Default is transactions.csv.')
     parser.add_argument('--pattern_file', default="category_patterns.json", help='JSON file that contains a series of patterns. See category_patterns.json.template for an example. The patterns are regulare expressions.')
     parser.add_argument('--output_file', default="output.json", help='File to output the results of matching the patterns from the --pattern_file argument.')
-    parser.add_argument('--column', default="Description", help='Column to group the transactions by. Must match to a column name in --transactions_file')
-    parser.add_argument('--sum_period', default="Monthly", choices=sum_period_choices, help='The period of summation to use on the transactions when building the report.')
+    parser.add_argument('--date_period', default="Monthly", choices=date_period_choices, help='The period of summation to use on the transactions when building the report.')
+    parser.add_argument('--category_column', default="Description", help='Column to group the transactions by. Must match to a column name in --transactions_file')
+    parser.add_argument('--date_column', default="Date", help='Column to group the transactions by. Must match to a column name in --transactions_file')
+    parser.add_argument('--amount_column', default="Amount", help='Column to group the transactions by. Must match to a column name in --transactions_file')
 
     args = parser.parse_args()
 
@@ -46,7 +52,7 @@ def get_args():
     for a in args.action:
         for key in actions_args_dict[a]:
             if key not in vars(args).keys():
-                msg = "Error: The argument --{} is required when passing the argument --action {}. {}".format(key, args.action, add_help)
+                msg = "Error: The argument --{} is required when passing the argument --action {}. {}".format(key, ", ".join(args.action), add_help)
                 raise argparse.ArgumentError(msg)
 
     # CategoriesByPattern
@@ -86,7 +92,7 @@ def categories_by_pattern(args):
         category_dict_pattern = json.load(file_in_pattern)
 
     count = 0
-    found_start = False
+    header_text = ""
     for line in file_lines:
         # Don't parse first line
         if count == 0:
@@ -94,17 +100,12 @@ def categories_by_pattern(args):
             count += 1
             continue
 
-        # Split the columns
-        line_split = line.split("\",\"")
-        line_split[0] = line_split[0].lstrip('"')
-        line_split[-1] = line_split[-1].lstrip('"\n')
-
         # Extract date and make date formats match
-        date_obj = datetime.strptime(line_split[0], "%m/%d/%Y")
-        date_str = get_date_key(args, date_obj)
+        date_str = get_column_value(args.date_column, line, header_text)
+        date_key = get_date_key(args, date_str)
 
         # Extract amount
-        amount_flt = float(line_split[3])
+        amount_flt = float(get_column_value(args.amount_column, line, header_text))
 
         found_match = False
         for key, value in category_dict_pattern.items():
@@ -116,16 +117,16 @@ def categories_by_pattern(args):
                         category_dict[key] = {
                             "Transactions": [line],
                             "Total": amount_flt,
-                            args.sum_period: {},
+                            args.date_period: {},
                         }
                     else:
                         category_dict[key]["Transactions"].append(line)
                         category_dict[key]["Total"] = category_dict[key]["Total"] + amount_flt
 
-                    if date_str not in category_dict[key][args.sum_period].keys():
-                        category_dict[key][args.sum_period][date_str] = amount_flt
+                    if date_key not in category_dict[key][args.date_period].keys():
+                        category_dict[key][args.date_period][date_key] = amount_flt
                     else:
-                        category_dict[key][args.sum_period][date_str] = category_dict[key][args.sum_period][date_str] + amount_flt
+                        category_dict[key][args.date_period][date_key] = category_dict[key][args.date_period][date_key] + amount_flt
 
                     # If match was found, then continue to next line
                     break
@@ -137,11 +138,11 @@ def categories_by_pattern(args):
             if "NO_MATCH" not in category_dict.keys():
                 category_dict["NO_MATCH"] = {"Transactions": [line]}
                 category_dict["NO_MATCH"] = {"Total": [line]}
-                category_dict["NO_MATCH"] = {args.sum_period: [line]}
+                category_dict["NO_MATCH"] = {args.date_period: [line]}
             else:
                 category_dict["NO_MATCH"]["Transactions"].append(line)
                 category_dict["NO_MATCH"] = {"Total": [line]}
-                category_dict["NO_MATCH"] = {args.sum_period: [line]}
+                category_dict["NO_MATCH"] = {args.date_period: [line]}
         count += 1
 
     # Write dictionary to json file
@@ -150,7 +151,11 @@ def categories_by_pattern(args):
 
 
 def categories_by_column(args):
-    category_dict = {}
+    category_dict = {
+        "Transactions": {},
+        "Total": {},
+        args.category_column: {},
+    }
 
     # Read in all transactions
     with open(args.transactions_file, 'r') as file_in_transactions:
@@ -165,31 +170,33 @@ def categories_by_column(args):
             count += 1
             continue
 
-        # Split the columns
-        line_split = line.split("\",\"")
-        line_split[0] = line_split[0].lstrip('"')
-        line_split[-1] = line_split[-1].lstrip('"\n')
-
         # Extract date and make date formats match
-        date_str_temp = get_column_value("Date", line, header_text)
-        date_obj = datetime.strptime(date_str_temp, "%m/%d/%Y")
-        date_str = get_date_key(args, date_obj)
+        date_str = get_column_value(args.date_column, line, header_text)
+        date_key = get_date_key(args, date_str)
 
-        # Extract description
-        column_key = get_column_value(args.column, line, header_text)
+        # Extract column to group by
+        column_key = get_column_value(args.category_column, line, header_text)
 
         # Extract amount
-        amount_flt = float(line_split[3])
+        amount_flt = float(get_column_value(args.amount_column, line, header_text))
 
-        # Add month to dict
-        if date_str not in category_dict.keys():
-            category_dict[date_str] = {}
-
-        # Add transaction to dict
-        if column_key not in category_dict[date_str].keys():
-            category_dict[date_str][column_key] = amount_flt
+        if date_key not in category_dict["Transactions"]:
+            category_dict["Transactions"][date_key] = [line]
         else:
-            category_dict[date_str][column_key] = category_dict[date_str][column_key] + amount_flt
+            category_dict["Transactions"][date_key].append(line)
+
+        if date_key not in category_dict["Total"]:
+            category_dict["Total"][date_key] = amount_flt
+        else:
+            category_dict["Total"][date_key] += amount_flt
+
+        if date_key not in category_dict[args.category_column]:
+            category_dict[args.category_column][date_key] = {}
+
+        if column_key not in category_dict[args.category_column][date_key]:
+            category_dict[args.category_column][date_key][column_key] = amount_flt
+        else:
+            category_dict[args.category_column][date_key][column_key] += amount_flt
 
     # Write dictionary to json file
     with open(args.output_file, 'w') as file_out:
@@ -213,39 +220,40 @@ def get_column_value(column, line, header_line):
     return ""
 
 
-def get_date_key(args, date_obj):
-    date_str = ""
+def get_date_key(args, date_str):
+    date_key = date_str
+    date_obj = datetime.strptime(date_str, "%m/%d/%Y")
 
     # Nothing need to be done here
-    if args.sum_period == "Daily":
-        date_str = date_obj.strftime("%Y-%m-%d")
+    if args.date_period == "Daily":
+        date_key = date_obj.strftime("%Y-%m-%d")
 
     # Need to set date_obj to nearest week
-    elif args.sum_period == "Weekly":
+    elif args.date_period == "Weekly":
         # 1st week
         if date_obj.day < 8:
-            date_str = date_obj.strftime("%Y-%m-01 to %Y-%m-07")
+            date_key = date_obj.strftime("%Y-%m-01 to %Y-%m-07")
         # 2nd week
         elif date_obj.day < 15:
-            date_str = date_obj.strftime("%Y-%m-08 to %Y-%m-14")
+            date_key = date_obj.strftime("%Y-%m-08 to %Y-%m-14")
         # 3rd week
         elif date_obj.day < 22:
-            date_str = date_obj.strftime("%Y-%m-15 to %Y-%m-21")
+            date_key = date_obj.strftime("%Y-%m-15 to %Y-%m-21")
         # 4th week
         else:
             last_day = calendar.monthrange(date_obj.year, date_obj.month)[1]
-            date_str = date_obj.strftime("%Y-%m-22 to %Y-%m-{}".format(last_day))
+            date_key = date_obj.strftime("%Y-%m-22 to %Y-%m-{}".format(last_day))
 
     # Need to set date_obj to current month
-    elif args.sum_period == "Monthly":
-        date_str = date_obj.strftime("%Y-%m")
+    elif args.date_period == "Monthly":
+        date_key = date_obj.strftime("%Y-%m")
 
     # Need to set date_obj to current year
-    elif args.sum_period == "Yearly":
-        date_str = date_obj.strftime("%Y")
+    elif args.date_period == "Yearly":
+        date_key = date_obj.strftime("%Y")
 
     # Return date key
-    return date_str
+    return date_key
 
 
 if __name__ == "__main__":
