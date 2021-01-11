@@ -7,42 +7,59 @@ import os
 
 
 def get_args():
-    action_choices = ["ParseTransactionPatterns", "ParseDescriptions"]
+    action_choices = ["CategoriesByPattern", "CategoriesByColumn"]
     sum_period_choices = ["Daily", "Weekly", "Monthly", "Yearly"]
     add_help = "Pass the -h argument for more information"
     actions_args_dict = {
-        "ParseTransactionPatterns": [
+        "CategoriesByPattern": [
             "transactions_file",
             "pattern_file",
             "output_file",
             "sum_period",
         ],
-        "ParseDescriptions": [
+        "CategoriesByColumn": [
             "transactions_file",
             "output_file",
+            "column",
             "sum_period",
-        ]
+        ],
     }
 
     parser = argparse.ArgumentParser(description='Used to process arguments passed to the Mint_Parser.py.')
 
-    parser.add_argument('--action', nargs='+', choices=action_choices, help='List of actions to perform.  Currently there is only one action that can be passed, which is ParseTransactions. {}'.format(add_help))
-    parser.add_argument('--transactions_file', default="transactions.csv", help='Used to point to the transaction file that was exported from Mint. Default is transactions.csv. {}'.format(add_help))
-    parser.add_argument('--pattern_file', default="category_patterns.json", help='JSON file that contains a series of patterns. See category_patterns.json.template for an example. The patterns are regulare expressions. {}'.format(add_help))
-    parser.add_argument('--output_file', default="output.json", help='File to output the results of matching the patterns from the --pattern_file argument. {}'.format(add_help))
-    parser.add_argument('--sum_period', default="Monthly", choices=sum_period_choices, help='The method of summation to use on the transactions when building the report. {}'.format(add_help))
+    parser.add_argument('--action', nargs='+', choices=action_choices, help='List of actions to perform.  Currently there is only one action that can be passed, which is ParseTransactions.')
+    parser.add_argument('--transactions_file', default="transactions.csv", help='Used to point to the transaction file that was exported from Mint. Default is transactions.csv.')
+    parser.add_argument('--pattern_file', default="category_patterns.json", help='JSON file that contains a series of patterns. See category_patterns.json.template for an example. The patterns are regulare expressions.')
+    parser.add_argument('--output_file', default="output.json", help='File to output the results of matching the patterns from the --pattern_file argument.')
+    parser.add_argument('--column', default="Description", help='Column to group the transactions by. Must match to a column name in --transactions_file')
+    parser.add_argument('--sum_period', default="Monthly", choices=sum_period_choices, help='The period of summation to use on the transactions when building the report.')
 
     args = parser.parse_args()
 
-    for key, value in actions_args_dict.items():
-        pass
-
     # Check that arguments are valid
-    if "ParseTransactionPatterns" in args.action and not os.path.exists(args.transactions_file):
-        msg = "Error: --transactions_file must point to a valid file when passing the argument --action ParseTransactions."
+    # Make sure action was passed
+    if args.action is None:
+        msg = "Error: --action argument must be passed. {}".format(add_help)
         raise argparse.ArgumentError(msg)
-    if "ParseTransactionPatterns" in args.action and not os.path.exists(args.pattern_file):
-        msg = "Error: --pattern_file must point to a valid file when passing the argument --action ParseTransactions."
+
+    # See if we are missing any arguments
+    for a in args.action:
+        for key in actions_args_dict[a]:
+            if key not in vars(args).keys():
+                msg = "Error: The argument --{} is required when passing the argument --action {}. {}".format(key, args.action, add_help)
+                raise argparse.ArgumentError(msg)
+
+    # CategoriesByPattern
+    if "CategoriesByPattern" in args.action and not os.path.exists(args.transactions_file):
+        msg = "Error: --transactions_file must point to a valid file when passing the argument --action ParseTransactions. {}".format(add_help)
+        raise argparse.ArgumentError(msg)
+    if "CategoriesByPattern" in args.action and not os.path.exists(args.pattern_file):
+        msg = "Error: --pattern_file must point to a valid file when passing the argument --action ParseTransactions. {}".format(add_help)
+        raise argparse.ArgumentError(msg)
+
+    # CategoriesByColumn
+    if "CategoriesByColumn" in args.action and not os.path.exists(args.transactions_file):
+        msg = "Error: --transactions_file must point to a valid file when passing the argument --action ParseTransactions. {}".format(add_help)
         raise argparse.ArgumentError(msg)
 
     return args
@@ -51,13 +68,13 @@ def get_args():
 def main():
     args = get_args()
     for a in args.action:
-        if a == "ParseTransactionPatterns":
-            parse_transaction_patterns(args)
-        elif a == "ParseDescriptions":
-            parse_descriptions(args)
+        if a == "CategoriesByPattern":
+            categories_by_pattern(args)
+        elif a == "CategoriesByColumn":
+            categories_by_column(args)
 
 
-def parse_transaction_patterns(args):
+def categories_by_pattern(args):
     category_dict = {}
 
     # Read in all transactions
@@ -73,6 +90,7 @@ def parse_transaction_patterns(args):
     for line in file_lines:
         # Don't parse first line
         if count == 0:
+            header_text = line
             count += 1
             continue
 
@@ -131,7 +149,7 @@ def parse_transaction_patterns(args):
         json.dump(category_dict, file_out, sort_keys=True, indent=4, ensure_ascii=False)
 
 
-def parse_descriptions(args):
+def categories_by_column(args):
     category_dict = {}
 
     # Read in all transactions
@@ -139,9 +157,11 @@ def parse_descriptions(args):
         file_lines = file_in_transactions.readlines()
 
     count = 0
+    header_text = ""
     for line in file_lines:
         # Don't parse first line
         if count == 0:
+            header_text = line
             count += 1
             continue
 
@@ -151,11 +171,12 @@ def parse_descriptions(args):
         line_split[-1] = line_split[-1].lstrip('"\n')
 
         # Extract date and make date formats match
-        date_obj = datetime.strptime(line_split[0], "%m/%d/%Y")
+        date_str_temp = get_column_value("Date", line, header_text)
+        date_obj = datetime.strptime(date_str_temp, "%m/%d/%Y")
         date_str = get_date_key(args, date_obj)
 
         # Extract description
-        description = line_split[1]
+        column_key = get_column_value(args.column, line, header_text)
 
         # Extract amount
         amount_flt = float(line_split[3])
@@ -165,14 +186,31 @@ def parse_descriptions(args):
             category_dict[date_str] = {}
 
         # Add transaction to dict
-        if description not in category_dict[date_str].keys():
-            category_dict[date_str][description] = amount_flt
+        if column_key not in category_dict[date_str].keys():
+            category_dict[date_str][column_key] = amount_flt
         else:
-            category_dict[date_str][description] = category_dict[date_str][description] + amount_flt
+            category_dict[date_str][column_key] = category_dict[date_str][column_key] + amount_flt
 
     # Write dictionary to json file
     with open(args.output_file, 'w') as file_out:
         json.dump(category_dict, file_out, sort_keys=True, indent=4, ensure_ascii=False)
+
+
+def get_column_value(column, line, header_line):
+    # Split the header
+    header_line_split = header_line.split("\",\"")
+    header_line_split[0] = header_line_split[0].lstrip('"')
+    header_line_split[-1] = header_line_split[-1].lstrip('"\n')
+
+    # Split the columns
+    line_split = line.split("\",\"")
+    line_split[0] = line_split[0].lstrip('"')
+    line_split[-1] = line_split[-1].lstrip('"\n')
+
+    for key, value in zip(header_line_split, line_split):
+        if key == column:
+            return value
+    return ""
 
 
 def get_date_key(args, date_obj):
@@ -180,23 +218,23 @@ def get_date_key(args, date_obj):
 
     # Nothing need to be done here
     if args.sum_period == "Daily":
-        date_str = date_obj.strftime("%m/%d/%Y")
+        date_str = date_obj.strftime("%Y-%m-%d")
 
     # Need to set date_obj to nearest week
     elif args.sum_period == "Weekly":
         # 1st week
         if date_obj.day < 8:
-            date_str = date_obj.strftime("%m/01/%Y-%m/07/%Y")
+            date_str = date_obj.strftime("%Y-%m-01 to %Y-%m-07")
         # 2nd week
         elif date_obj.day < 15:
-            date_str = date_obj.strftime("%m/08/%Y-%m/14/%Y")
+            date_str = date_obj.strftime("%Y-%m-08 to %Y-%m-14")
         # 3rd week
-        elif date_obj.day < 21:
-            date_str = date_obj.strftime("%m/15/%Y-%m/21/%Y")
+        elif date_obj.day < 22:
+            date_str = date_obj.strftime("%Y-%m-15 to %Y-%m-21")
         # 4th week
         else:
             last_day = calendar.monthrange(date_obj.year, date_obj.month)[1]
-            date_str = date_obj.strftime("%m/21/%Y-%m/{}/%Y".format(last_day))
+            date_str = date_obj.strftime("%Y-%m-22 to %Y-%m-{}".format(last_day))
 
     # Need to set date_obj to current month
     elif args.sum_period == "Monthly":
