@@ -136,13 +136,15 @@ def categories_by_pattern(args):
         # Record the transaction if no pattern matched it
         if not found_match:
             if "NO_MATCH" not in category_dict.keys():
-                category_dict["NO_MATCH"] = {"Transactions": [line]}
-                category_dict["NO_MATCH"] = {"Total": [line]}
-                category_dict["NO_MATCH"] = {args.date_period: [line]}
+                category_dict["NO_MATCH"] = {
+                    "Transactions": [line],
+                    "Total": [line],
+                    args.date_period: [line]
+                }
             else:
                 category_dict["NO_MATCH"]["Transactions"].append(line)
-                category_dict["NO_MATCH"] = {"Total": [line]}
-                category_dict["NO_MATCH"] = {args.date_period: [line]}
+                category_dict["NO_MATCH"]["Total"].append(line)
+                category_dict["NO_MATCH"][args.date_period].append(line)
         count += 1
 
     # Write dictionary to json file
