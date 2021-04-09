@@ -83,13 +83,29 @@ def main():
 def categories_by_pattern(args):
     category_dict = {}
 
+    # Check that transactions file is valid path before opening
+    if not os.path.exists(args.transactions_file):
+        print("Error: {} not found.".format(args.transactions_file))
+        print("Override by passing path to --transactions_file if needed.")
+        exit(1)
+
     # Read in all transactions
     with open(args.transactions_file, 'r') as file_in_transactions:
         file_lines = file_in_transactions.readlines()
 
+    # Check that pattern file is valid path before opening
+    if not os.path.exists(args.pattern_file):
+        print("Error: {} not found.".format(args.pattern_file))
+        print("Override by passing path to --pattern_file if needed.")
+        exit(1)
+
     # Read in all patterns
-    with open(args.pattern_file, 'r') as file_in_pattern:
-        category_dict_pattern = json.load(file_in_pattern)
+    try:
+        with open(args.pattern_file, 'r') as file_in_pattern:
+            category_dict_pattern = json.load(file_in_pattern)
+    except ValueError as err:
+        print("Error: {} is not valid json.\n{}".format(args.pattern_file, err))
+        exit(1)
 
     count = 0
     header_text = ""
@@ -158,6 +174,12 @@ def categories_by_column(args):
         "Total": {},
         args.category_column: {},
     }
+
+    # Check that transactions file is valid path before opening
+    if not os.path.exists(args.transactions_file):
+        print("Error: {} not found.".format(args.transactions_file))
+        print("Override by passing path to --transactions_file if needed.")
+        exit(1)
 
     # Read in all transactions
     with open(args.transactions_file, 'r') as file_in_transactions:
