@@ -6,7 +6,7 @@
         
     ],
 	"INVESTING": [
- 
+		".*Investment.*"
     ],
     "CREDIT_PAYMENTS": [
 

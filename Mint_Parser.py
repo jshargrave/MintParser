@@ -31,9 +31,9 @@ def get_args():
 
     parser = argparse.ArgumentParser(description='Used to process arguments passed to the Mint_Parser.py.')
 
-    parser.add_argument('--action', nargs='+', choices=action_choices, help='List of actions to perform.  Currently there is only one action that can be passed, which is ParseTransactions.')
+    parser.add_argument('--action', default=["CategoriesByPattern"], nargs='+', choices=action_choices, help='List of actions to perform.  Currently there is only one action that can be passed, which is ParseTransactions.')
     parser.add_argument('--transactions_file', default="transactions.csv", help='Used to point to the transaction file that was exported from Mint. Default is transactions.csv.')
-    parser.add_argument('--pattern_file', default="category_patterns.json", help='JSON file that contains a series of patterns. See category_patterns.json.template for an example. The patterns are regulare expressions.')
+    parser.add_argument('--pattern_file', default="category_patterns_default.json", help='JSON file that contains a series of patterns. See category_patterns.json.template for an example. The patterns are regulare expressions.')
     parser.add_argument('--output_file', default="output.json", help='File to output the results of matching the patterns from the --pattern_file argument.')
     parser.add_argument('--date_period', default="Monthly", choices=date_period_choices, help='The period of summation to use on the transactions when building the report.')
     parser.add_argument('--category_column', default="Description", help='Column to group the transactions by. Must match to a column name in --transactions_file')
