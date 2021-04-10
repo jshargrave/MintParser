@@ -1,29 +1,71 @@
 {
     "INCOME": [
+		".*Interest Income.*",
+		".*Income.*",
+		".*Paycheck.*",
+		".*Cashback Bonus Redemption.*",
+		".*TAX REF.*",
+		".*TAXRFD.*",
+		".*TAXEIP3.*",
+		".*XXTAXEIP2.*"
+    ],
 
-    ],
-    "SPENDING": [
-        
-    ],
 	"INVESTING": [
-		".*Investment.*"
+		".*Investment.*",
+		".*Employee Contribution.*",
+		".*Employer Contribution.*",
+		".*SCHWAB BROKERAGE MONEYLINK.*Buy.*"
     ],
-    "CREDIT_PAYMENTS": [
-
+    "CREDIT_CARD_PAYMENTS": [
+		"Credit Card Payment",
+		".*CITI AUTOPAY PAYMENT.*"
     ],
-    "TRANSFER": [
-
+	"CHECK_PAID": [
+		".*Check Paid.*"
+	],
+    "BANK_TRANSFER": [
+		".*transfer.*",
+		".*Transfer.*"
     ],
     "LOAN_PAYMENTS": [
-
+		".*Student Loan.*"
     ],
     "HEALTH": [
-
+		".*Total Access Urgent Care.*",
+		".*Blue Cross.*"
     ],
 	"GIFTS": [
 
     ],
+	"UTILITIES": [
+		".*Charter Communications.*",
+		".*Ameren.*"
+	],
+	"INSURANCE": [
+		".*Progressive.*"
+	],
 	"OTHER": [
-
+		".*Balance Forward.*",
+		".*ATM Fee Refund.*"
+    ],
+	"SPENDING": [
+        ".*Groceries.*",
+		".*Gas & Fuel.*",
+		".*Amazon.*",
+		".*Gym.*",
+		".*Steam Games.*",
+		".*eBay.*",
+		".*Wal-Mart.*",
+		".*Wayfair.*",
+		".*Citi.*",
+		".*Discover Card.*",
+		".*Mortgage & Rent.*",
+		".*Clothing.*",
+		".*Food & Dining.*",
+		".*Walgreens.*",
+		".*Newegg.*",
+		".*PLAYSTATION NETWORK.*",
+		".*Spotify.*",
+		".*Target.*Shopping"
     ]
 }
