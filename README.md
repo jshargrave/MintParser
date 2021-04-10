@@ -84,7 +84,12 @@ Name of the column to extract the amount from.  Default value is "Amount".  This
 Can be used to disable the user interface.  Note that if any errors occur a exception will be thrown.  This argument implements a string to bool parsing function.  So it supports a series of values that can be interpreted as true/false.  Some of the values are 'yes', 'true', 't', 'y', '1', 'no', 'false', 'f', 'n', '0'.  An exception is thrown if an invalid value is passed.
 
 # Examples
-category_patterns.json
+Currently MintParser only outputs results in a json format.  These results are pretty simple to incorporate into a Excel or Sheets document.  However it become tedious since it requires you to scroll around, select the values you want, and then copy past them into the document.  Future efforts will probably add a csv output support to make it more of a drag and drop to incorporate into your document that does some metrics analysis.
+
+Below are some example output obtained when running the MintParser using a pattern file shown below.
+
+
+## Pattern File Contents
 ~~~
 {
 	"DEPOSIT CHECKS": 
@@ -94,7 +99,7 @@ category_patterns.json
 }
 ~~~
 
-output.json
+## Output File Contents
 ~~~
     "DEPOSIT CHECKS": {
         "Monthly": {
