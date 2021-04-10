@@ -44,6 +44,45 @@ List of arguements below.  I go into further detail about the usage and values o
 --amount_column     AMOUNT_COLUMN       Column in --transactions_file to extract amount from
 ~~~
 
+### --action
+The --action argument is the most high level argument there is.  It is the argument that tells MintParser which logic to run.  Valid values are "GroupByPatternFile", "GroupByColumnValue", "GroupBySearchPattern".
+
+### --action GroupByPatternFile
+This action will group the transactions by utilizing a series of Regular Expressions defined in a json file.  The file that contains the Regular Expressions is defined with the [--pattern_file](#--pattern_file) argument.
+
+### --action GroupByColumnValue
+This action will group the transactions based on the value of a column in the csv transactions file.  The column it picks to match is defined by the [--categorize_column](#--categorize_column) argument.
+
+### --action GroupBySearchPattern
+This action will group the transactions by utilizing a single Regular Expression passed in.  The Regular Expression is passed by the [--search_pattern](#--search_pattern) argument.
+
+### --transactions_file
+This argument points to the csv transactions file exported from Mint.com.  The default value is transactions.csv.  If this is not a valid path the user will be prompted to provide a valid path.
+
+### --pattern_file
+This argument points to the json pattern file that defines all of the regular expressions to group the transactions by.  The default value is category_patterns_default.json which is a file provided in the repo as an example of how to setup you're own pattern file.
+
+### --categorize_column
+Stores the column name to retrieve the value from and group the transactions by.  The default value is Category.  Note that there is not smart matching involved.  The value either matches or does not.  This often leads to similiar values found being seperated.
+
+### --search_pattern
+The Regular Expression pattern to use when grouping the the transactions together.  Note that this can be a full Regular Expression or just some text you want to search for contained in transactions.
+
+### --output_file
+Where the results are written.  The default value is output.json.  Note that if you run a query with multiple actions then the action name will be appeneded to the end of the output file to keep from overwriting results.
+
+### --date_period
+Argument used to specify what date period to seperate the grouped transactions by.  Valid values are "Daily", "Weekly", "Monthly", "Yearly".
+
+### --date_column
+Name of the column to extract the date from.  Default value is "Date".  This value can be overwritten if you are using a transactions csv document that is not from Mint.com.
+
+### --amount_column
+Name of the column to extract the amount from.  Default value is "Amount".  This value can be overwritten if you are using a transactions csv document that is not from Mint.com.
+
+### --user_interface
+Can be used to disable the user interface.  Note that if any errors occur a exception will be thrown.  This argument implements a string to bool parsing function.  So it supports a series of values that can be interpreted as true/false.  Some of the values are 'yes', 'true', 't', 'y', '1', 'no', 'false', 'f', 'n', '0'.  An exception is thrown if an invalid value is passed.
+
 # Examples
 category_patterns.json
 ~~~
