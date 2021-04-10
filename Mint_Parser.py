@@ -216,16 +216,9 @@ def group_by_pattern_file(args):
                 match = re.findall(pattern, line)
                 if match:
                     found_match = True
-                    if key not in category_dict.keys():
-                        category_dict[key] = copy.deepcopy(temp_category_dict)
 
-                    if date_key not in category_dict[key][args.date_period].keys():
-                        category_dict[key][args.date_period][date_key] = amount_flt
-                    else:
-                        category_dict[key][args.date_period][date_key] += amount_flt
-
-                    category_dict[key]["Transactions"].append(line)
-                    category_dict[key]["Total"] += amount_flt
+                    # Save to category_dict
+                    save_transaction_json(args, category_dict, key, date_key, amount_flt, line)
 
                     # If match was found, then continue to next line
                     break
@@ -235,16 +228,9 @@ def group_by_pattern_file(args):
         # Record the transaction if no pattern matched it
         if not found_match:
             key = "NO_MATCH"
-            if key not in category_dict.keys():
-                category_dict[key] = copy.deepcopy(temp_category_dict)
 
-            if date_key not in category_dict[key][args.date_period].keys():
-                category_dict[key][args.date_period][date_key] = amount_flt
-            else:
-                category_dict[key][args.date_period][date_key] += amount_flt
-
-            category_dict[key]["Transactions"].append(line)
-            category_dict[key]["Total"] += amount_flt
+            # Save to category_dict
+            save_transaction_json(args, category_dict, key, date_key, amount_flt, line)
         count += 1
 
     # Write dictionary to json file
@@ -253,11 +239,6 @@ def group_by_pattern_file(args):
 
 
 def group_by_column_value(args):
-    temp_category_dict = {
-        "Total": 0,
-        "Transactions": [],
-        args.date_period: {},
-    }
     category_dict = {}
 
     # Check that transactions file is valid path before opening
@@ -289,19 +270,8 @@ def group_by_column_value(args):
         # Extract amount
         amount_flt = float(get_column_value(args.amount_column, line, header_text))
 
-        if column_key not in category_dict.keys():
-            category_dict[column_key] = copy.deepcopy(temp_category_dict)
-
-        if date_key not in category_dict[column_key][args.date_period]:
-            category_dict[column_key][args.date_period][date_key] = amount_flt
-        else:
-            category_dict[column_key][args.date_period][date_key] += amount_flt
-
-        if date_key not in category_dict[column_key][args.date_period]:
-            category_dict[column_key][args.date_period][date_key] = {}
-
-        category_dict[column_key]["Transactions"].append(line)
-        category_dict[column_key]["Total"] += amount_flt
+        # Save to category_dict
+        save_transaction_json(args, category_dict, column_key, date_key, amount_flt, line)
 
         count += 1
 
@@ -311,11 +281,7 @@ def group_by_column_value(args):
 
 
 def group_by_search_pattern(args):
-    category_dict = {
-        "Total": 0,
-        "Transactions": [],
-        args.date_period: {},
-    }
+    category_dict = {}
 
     # Check that transactions file is valid path before opening
     if not os.path.exists(args.transactions_file):
@@ -345,18 +311,32 @@ def group_by_search_pattern(args):
 
         match = re.findall(args.search_pattern, line)
         if match:
-            if date_key not in category_dict[args.date_period]:
-                category_dict[args.date_period][date_key] = amount_flt
-            else:
-                category_dict[args.date_period][date_key] += amount_flt
-
-            category_dict["Transactions"].append(line)
-            category_dict["Total"] += amount_flt
+            # Save to category_dict
+            save_transaction_json(args, category_dict, args.search_pattern, date_key, amount_flt, line)
         count += 1
 
     # Write dictionary to json file
     with open(args.output_file, 'w') as file_out:
         json.dump(category_dict, file_out, sort_keys=True, indent=4, ensure_ascii=False)
+
+
+def save_transaction_json(args, category_dict, key, date_key, amount_flt, line):
+    temp_category_dict = {
+        "Total": 0,
+        "Transactions": [],
+        args.date_period: {},
+    }
+
+    if key not in category_dict.keys():
+        category_dict[key] = copy.deepcopy(temp_category_dict)
+
+    if date_key not in category_dict[key][args.date_period]:
+        category_dict[key][args.date_period][date_key] = amount_flt
+    else:
+        category_dict[key][args.date_period][date_key] += amount_flt
+
+    category_dict[key]["Transactions"].append(line)
+    category_dict[key]["Total"] += amount_flt
 
 
 def get_column_value(column, line, header_line):
