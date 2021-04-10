@@ -10,6 +10,7 @@ import os
 def get_args():
     action_choices = ["GroupByPatternFile", "GroupByColumnValue", "GroupBySearchPattern"]
     date_period_choices = ["Daily", "Weekly", "Monthly", "Yearly"]
+    valid_file_args = ["transactions_file", "pattern_file"]
     add_help = "Pass the -h argument for more information"
     actions_args_dict = {
         "GroupByPatternFile": [
@@ -45,12 +46,12 @@ def get_args():
 
     parser = argparse.ArgumentParser(description='Used to process arguments passed to the Mint_Parser.py.', usage=usage)
 
-    parser.add_argument('--action', default=["GroupByPatternFile"], nargs='+', choices=action_choices, help='List of actions to perform. Can be one or multiples of the following: \"{}\"'.format("\" \"".join(action_choices)))
+    parser.add_argument('--action', nargs='+', choices=action_choices, help='List of actions to perform. Can be one or multiples of the following: \"{}\"'.format("\" \"".join(action_choices)))
     parser.add_argument('--transactions_file', default="transactions.csv", help='Used to point to the transaction file exported from Mint. Default is transactions.csv.')
     parser.add_argument('--pattern_file', default="category_patterns_default.json", help='JSON file that contains a series of regular expressions to match patterns in the --transactions_file. See category_patterns_default.json for an example.')
     parser.add_argument('--search_pattern', help='Regular expression to use for searching through transactions.')
     parser.add_argument('--output_file', default="output.json", help='File to output the results to.')
-    parser.add_argument('--date_period', default="Monthly", choices=date_period_choices, help='The period of summation to use on the transactions when building the report. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices)))
+    parser.add_argument('--date_period', choices=date_period_choices, help='The period of summation to use on the transactions when building the report. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices)))
     parser.add_argument('--categorize_column', default="Category", help='Column to group transactions by. Must match to a column name in --transactions_file')
     parser.add_argument('--date_column', default="Date", help='Column to extract the amount date from. Must match a column name in --transactions_file')
     parser.add_argument('--amount_column', default="Amount", help='Column to extract the amount from. Must match a column name in --transactions_file')
@@ -60,46 +61,89 @@ def get_args():
     # Check that arguments are valid
     # Make sure action was passed
     if args.action is None:
-        msg = "Error: --action argument must be passed. {}".format(add_help)
-        raise argparse.ArgumentError(msg)
+        msg = "--action argument must be passed. {}".format(add_help)
+        args.action = request_arg(msg, action_choices, True)
+        if args.action is None:
+            raise argparse.ArgumentError("Error: " + msg)
 
     # See if we are missing any arguments
     for a in args.action:
         for key in actions_args_dict[a]:
-            if key not in vars(args).keys():
-                msg = "Error: The argument --{} is required when passing the argument --action {}. {}".format(key, ", ".join(args.action), add_help)
-                raise argparse.ArgumentError(msg)
-
-    # GroupByPatternFile
-    if "GroupByPatternFile" in args.action and not os.path.exists(args.transactions_file):
-        msg = "Error: --transactions_file must point to a valid file when passing the argument --action GroupByPatternFile. {}".format(add_help)
-        raise argparse.ArgumentError(msg)
-    if "GroupByPatternFile" in args.action and not os.path.exists(args.pattern_file):
-        msg = "Error: --pattern_file must point to a valid file when passing the argument --action GroupByPatternFile. {}".format(add_help)
-        raise argparse.ArgumentError(msg)
-
-    # GroupByColumnValue
-    if "GroupByColumnValue" in args.action and not os.path.exists(args.transactions_file):
-        msg = "Error: --transactions_file must point to a valid file when passing the argument --action GroupByColumnValue. {}".format(add_help)
-        raise argparse.ArgumentError(msg)
-
-    # GroupBySearchPattern
-    if "GroupBySearchPattern" in args.action and not os.path.exists(args.transactions_file):
-        msg = "Error: --transactions_file must point to a valid file when passing the argument --action GroupBySearchPattern. {}".format(add_help)
-        raise argparse.ArgumentError(msg)
+            if key not in vars(args).keys() or vars(args)[key] is None:
+                msg = "The argument --{} is required when passing the argument --action {}. {}".format(key, ", ".join(args.action), add_help)
+                if key == "date_period":
+                    vars(args)[key] = request_arg(msg, date_period_choices)
+                else:
+                    vars(args)[key] = request_arg(msg)
+                if key not in vars(args).keys() or vars(args)[key] is None:
+                    raise argparse.ArgumentError("Error: " + msg)
+            elif key in valid_file_args and not os.path.exists(vars(args)[key]):
+                msg = "Argument --{} does not point to a valid file ({}). {}".format(key, vars(args)[key], add_help)
+                vars(args)[key] = request_arg(msg)
+                if not os.path.exists(vars(args)[key]):
+                    raise argparse.ArgumentError("Error: " + msg)
 
     return args
+
+
+def request_arg(msg, choices=None, allow_multiples=False):
+    print(msg)
+
+    # List of choice was passed
+    if choices:
+        choice_dict = {str(i + 1): choices[i] for i in range(0, len(choices))}
+
+        for key, value in choice_dict.items():
+            print("{}. {}".format(key, value))
+
+        # User can select a list of values for the argument
+        if allow_multiples:
+            user_input = input("Pick a space separated list of numbers for the argument value now... ")
+            print("")
+            user_input = user_input.strip(" ")
+            user_input_split = user_input.split(" ")
+            arg_choice_list = []
+            for i in user_input_split:
+                if i not in choice_dict.keys():
+                    return None
+                else:
+                    arg_choice_list.append(choice_dict[i])
+            return arg_choice_list
+        else:
+            user_input = input("Pick a number for the argument value now... ")
+            print("")
+
+            if user_input in choice_dict.keys():
+                return choice_dict[user_input]
+            else:
+                return None
+    else:
+        user_input = input("Enter the value for the argument now... ")
+        print("")
+
+        if user_input:
+            return user_input
+        else:
+            return None
 
 
 def main():
     args = get_args()
     for a in args.action:
+        # If this a multiple action run, we want to change the output file so that we don't overwrite results
+        if len(args.action) > 1:
+            split_file = os.path.splitext(args.output_file)
+            args.output_file = "{}-{}{}".format(split_file[0], a, split_file[1])
+
+        # Run action
+        print("Running {} action".format(a))
         if a == "GroupByPatternFile":
             group_by_pattern_file(args)
         elif a == "GroupByColumnValue":
             group_by_column_value(args)
         elif a == "GroupBySearchPattern":
             group_by_search_pattern(args)
+        print("Output results to {}".format(args.output_file))
 
 
 def group_by_pattern_file(args):
