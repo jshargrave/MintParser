@@ -42,7 +42,8 @@ List of arguements below.  I go into further detail about the usage and values o
 --pattern_file      PATTERN_FILE        Pattern file contain series of Regular Expressions
 --categorize_column CATEGORIZE_COLUMN   Column to group transactions by
 --search_pattern    SEARCH_PATTERN      Search pattern to group transactions by
---output_file       OUTPUT_FILE         Output file where results are written
+--output_file_json  OUTPUT_FILE_JSON    Output file where results are written
+--output_file_csv   OUTPUT_FILE_CSV     Output file where results are written
 --date_period       DATE_PERIOD         Date period to group matching transactions by
 --date_column       DATE_COLUMN         Column in --transactions_file to extract date from
 --amount_column     AMOUNT_COLUMN       Column in --transactions_file to extract amount from
@@ -72,8 +73,11 @@ Stores the column name to retrieve the value from and group the transactions by.
 ### --search_pattern
 The Regular Expression pattern to use when grouping the the transactions together.  Note that this can be a full Regular Expression or just some text you want to search for contained in transactions.
 
-### --output_file
+### --output_file_json
 Where the results are written.  The default value is output.json.  Note that if you run a query with multiple actions then the action name will be appeneded to the end of the output file to keep from overwriting results.
+
+### --output_file_csv
+Where the results are written.  The default value is output.csv.  Note that if you run a query with multiple actions then the action name will be appeneded to the end of the output file to keep from overwriting results.
 
 ### --date_period
 Argument used to specify what date period to seperate the grouped transactions by.  Valid values are "Daily", "Weekly", "Monthly", "Yearly".
