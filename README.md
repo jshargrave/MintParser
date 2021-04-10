@@ -14,6 +14,10 @@ One helpful this is the Mint.com allows you to export all of your transactions. 
 
 This led me to think if only there was a way to quickly parse the transactions and group them using Regular Expressions.  That is when I started working on MintParser.  MintParser will take a series of Regular Expressions and searches the Mint.com transactions and groups them together by the matches and a date period.
 
+Once I got going I was able to calculate more accuratly things like income vs. spending similiar to what you see below.
+![image](https://user-images.githubusercontent.com/14623411/114279263-9703c080-99e8-11eb-8956-2d441924e368.png)
+
+
 # Quick Start
 1. Clone repo
 1. Export all transactions from Mint.com by navigating to [https://www.mint.com/](https://www.mint.com/) and logging in.
@@ -103,28 +107,29 @@ Below are some example output obtained when running the MintParser using a patte
 ~~~
     "DEPOSIT CHECKS": {
         "Monthly": {
-            "2018-03": 1322.0,
-            "2018-04": 1102.29,
-            "2018-05": 3525.65,
-            "2018-06": 197.75,
-            "2019-03": 87.58,
-            "2020-03": 80.0,
-            "2020-09": 340.0,
-            "2020-12": 4.29
+	    "2020-12": 1,199.00,
+	    "2020-11": 2,708.00,
+	    "2020-10": 1,290.00,
+	    "2020-09": 1,597.00,
+	    "2020-08": 1,910.00,
+	    "2020-07": 2,283.00,
+	    "2020-06": 1,788.00,
+	    "2020-05": 2,105.00,
+	    "2020-04": 2,651.00
         },
         "Total": 6659.5599999999995,
         "Transactions": [
-            "\"12/28/2020\",\"eCheck Deposit\",\"eCheck Deposit\",\"4.29\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n",
-            "\"9/17/2020\",\"eCheck Deposit\",\"eCheck Deposit\",\"300.00\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n",
-            "\"9/02/2020\",\"eCheck Deposit\",\"eCheck Deposit\",\"40.00\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n",
-            "\"3/30/2020\",\"eCheck Deposit\",\"eCheck Deposit\",\"80.00\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n",
-            "\"3/13/2019\",\"Echeck Deposit\",\"eCheck Deposit\",\"87.58\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n",
-            "\"6/19/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"197.75\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n",
-            "\"5/14/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"3523.00\",\"credit\",\"Income\",\"Emergency Fund\",\"\",\"\"\n",
-            "\"5/04/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"2.65\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n",
-            "\"4/16/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"597.71\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n",
-            "\"4/02/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"504.58\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n",
-            "\"3/09/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"1322.00\",\"credit\",\"Income\",\"Interest Checking\",\"\",\"\"\n"
+            "\"12/28/2020\",\"eCheck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"9/17/2020\",\"eCheck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"9/02/2020\",\"eCheck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"3/30/2020\",\"eCheck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"3/13/2019\",\"Echeck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"6/19/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"5/14/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"5/04/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"4/16/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"4/02/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n",
+            "\"3/09/2018\",\"Echeck Deposit\",\"eCheck Deposit\",\"###\",\"credit\",\"Income\",\"###\",\"\",\"\"\n"
         ]
     },
 ~~~
