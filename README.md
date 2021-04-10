@@ -107,7 +107,7 @@ Below are some example output obtained when running the MintParser using a patte
 }
 ~~~
 
-## Output File Contents
+## Output File Contents JSON
 ~~~
     "DEPOSIT CHECKS": {
         "Monthly": {
@@ -137,3 +137,7 @@ Below are some example output obtained when running the MintParser using a patte
         ]
     },
 ~~~
+
+## Output File Contents CSV
+![image](https://user-images.githubusercontent.com/14623411/114281748-054e8000-99f5-11eb-8d79-db34c0046c6a.png)
+
