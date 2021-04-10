@@ -15,13 +15,11 @@ One helpful this is the Mint.com allows you to export all of your transactions. 
 This led me to think if only there was a way to quickly parse the transactions and group them using Regular Expressions.  That is when I started working on MintParser.  MintParser will take a series of Regular Expressions and searches the Mint.com transactions and groups them together by the matches and a date period.
 
 # Quick Start
-* Clone repo
-* Export all transactions from Mint.com by navigating to [https://www.mint.com/](https://www.mint.com/).
-	* Log in.
-	* Click on the Transactions tab.
-	* Scroll all the way to the bottom and click the 'export all ### transactions' link. You will have some number in the place of ###.
-	* Drop the csv file into the same directory where you cloned the repo.
-* Run Mint_Parser.py
+1. Clone repo
+1. Export all transactions from Mint.com by navigating to [https://www.mint.com/](https://www.mint.com/) and logging in.
+1. Click on the Transactions tab. Scroll all the way to the bottom and click the "export all ### transactions" link. You will have some number in the place of ###.
+1. Drop the csv file into the same directory where you cloned the repo.
+1. Run Mint_Parser.py
 
 # Arguments
 # <a name="arguments"></a>
