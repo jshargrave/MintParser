@@ -21,16 +21,28 @@ This led me to think if only there was a way to quickly parse the transactions a
 1. Drop the csv file into the same directory where you cloned the repo.
 1. Run Mint_Parser.py
 
-# Arguments
-# <a name="arguments"></a>
-## --action
-List of actions to perform.  Currently there is only one action that can be passed, which is ParseTransactions.
-## --transactions_file
-Used to point to the transaction file that was exported from Mint. Default is transactions.csv.
-## --pattern_file
-JSON file that contains a series of patterns. See category_patterns.json.template for an example. The patterns are regulare expressions.
-## --output_file
-File to output the results of matching the patterns from the --pattern_file argument.
+# Usage
+MintParser can be run with the following commands.  There are several additional arguments you can pass to override the values.  Normally the default value is taken unless there is something wrong with that value like pointing to a invalid file path.  Additionally some values will be requested from the user if not provided like --action or --date_period.
+~~~
+Mint_Parser.py [-h]
+               --action GroupByPatternFile   --pattern_file      PATTERN_FILE
+               --action GroupByColumnValue   --categorize_column CATEGORIZE_COLUMN
+               --action GroupBySearchPattern --search_pattern    SEARCH_PATTERN
+~~~
+
+## Arguments
+List of arguements below.  I go into further detail about the usage and values of each argument below.
+~~~
+--action            ACTION	        List of actions to perform
+--transactions_file TRANSACTION_FILE    Transactions file from Mint.com
+--pattern_file      PATTERN_FILE        Pattern file contain series of Regular Expressions
+--categorize_column CATEGORIZE_COLUMN   Column to group transactions by
+--search_pattern    SEARCH_PATTERN      Search pattern to group transactions by
+--output_file       OUTPUT_FILE         Output file where results are written
+--date_period       DATE_PERIOD         Date period to group matching transactions by
+--date_column       DATE_COLUMN         Column in --transactions_file to extract date from
+--amount_column     AMOUNT_COLUMN       Column in --transactions_file to extract amount from
+~~~
 
 # Examples
 category_patterns.json
