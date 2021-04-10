@@ -22,7 +22,7 @@ Once I got going I was able to calculate more accuratly things like income vs. s
 1. Clone repo
 1. Export all transactions from Mint.com by navigating to [https://www.mint.com/](https://www.mint.com/) and logging in.
 1. Click on the Transactions tab. Scroll all the way to the bottom and click the "export all ### transactions" link. You will have some number in the place of ###.
-1. Drop the csv file into the same directory where you cloned the repo.
+1. Drop the csv transactions file into the cloned repo directory.
 1. Run Mint_Parser.py
 
 # Usage
