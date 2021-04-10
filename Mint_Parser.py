@@ -3,6 +3,7 @@ import calendar
 import argparse
 import json
 import copy
+import csv
 import re
 import os
 
@@ -16,7 +17,8 @@ def get_args():
         "GroupByPatternFile": [
             "transactions_file",
             "pattern_file",
-            "output_file",
+            "output_file_json",
+            "output_file_csv",
             "date_period",
             "date_column",
             "amount_column",
@@ -24,7 +26,8 @@ def get_args():
         "GroupByColumnValue": [
             "transactions_file",
             "categorize_column",
-            "output_file",
+            "output_file_json",
+            "output_file_csv",
             "date_period",
             "date_column",
             "amount_column",
@@ -32,7 +35,8 @@ def get_args():
         "GroupBySearchPattern": [
             "transactions_file",
             "search_pattern",
-            "output_file",
+            "output_file_json",
+            "output_file_csv",
             "date_period",
             "date_column",
             "amount_column",
@@ -50,7 +54,8 @@ def get_args():
     parser.add_argument('--transactions_file', default="transactions.csv", help='Used to point to the transaction file exported from Mint. Default is transactions.csv.')
     parser.add_argument('--pattern_file', default="category_patterns_default.json", help='JSON file that contains a series of regular expressions to match patterns in the --transactions_file. See category_patterns_default.json for an example.')
     parser.add_argument('--search_pattern', help='Regular expression to use for searching through transactions.')
-    parser.add_argument('--output_file', default="output.json", help='File to output the results to.')
+    parser.add_argument('--output_file_json', default="output.json", help='File to output the json results to.')
+    parser.add_argument('--output_file_csv', default="output.csv", help='File to output the csv results to.')
     parser.add_argument('--date_period', choices=date_period_choices, help='The period of summation to use on the transactions when building the report. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices)))
     parser.add_argument('--categorize_column', default="Category", help='Column to group transactions by. Must match to a column name in --transactions_file')
     parser.add_argument('--date_column', default="Date", help='Column to extract the amount date from. Must match a column name in --transactions_file')
@@ -148,8 +153,10 @@ def main():
     for a in args.action:
         # If this a multiple action run, we want to change the output file so that we don't overwrite results
         if len(args.action) > 1:
-            split_file = os.path.splitext(args.output_file)
-            args.output_file = "{}-{}{}".format(split_file[0], a, split_file[1])
+            split_file_json = os.path.splitext(args.output_file_json)
+            args.output_file_json = "{}-{}{}".format(split_file_json[0], a, split_file_json[1])
+            split_file_csv = os.path.splitext(args.output_file_csv)
+            args.output_file_csv = "{}-{}{}".format(split_file_csv[0], a, split_file_csv[1])
 
         # Run action
         print("Running {} action".format(a))
@@ -159,7 +166,7 @@ def main():
             group_by_column_value(args)
         elif a == "GroupBySearchPattern":
             group_by_search_pattern(args)
-        print("Output results to {}".format(args.output_file))
+        print("Output results to {} and {}".format(args.output_file_json, args.output_file_csv))
 
 
 def group_by_pattern_file(args):
@@ -218,7 +225,7 @@ def group_by_pattern_file(args):
                     found_match = True
 
                     # Save to category_dict
-                    save_transaction_json(args, category_dict, key, date_key, amount_flt, line)
+                    add_transaction_json(args, category_dict, key, date_key, amount_flt, line)
 
                     # If match was found, then continue to next line
                     break
@@ -230,12 +237,12 @@ def group_by_pattern_file(args):
             key = "NO_MATCH"
 
             # Save to category_dict
-            save_transaction_json(args, category_dict, key, date_key, amount_flt, line)
+            add_transaction_json(args, category_dict, key, date_key, amount_flt, line)
         count += 1
 
-    # Write dictionary to json file
-    with open(args.output_file, 'w') as file_out:
-        json.dump(category_dict, file_out, sort_keys=True, indent=4, ensure_ascii=False)
+    # Write date to files
+    save_transaction_json(args, category_dict)
+    save_transaction_csv(args, category_dict)
 
 
 def group_by_column_value(args):
@@ -271,13 +278,13 @@ def group_by_column_value(args):
         amount_flt = float(get_column_value(args.amount_column, line, header_text))
 
         # Save to category_dict
-        save_transaction_json(args, category_dict, column_key, date_key, amount_flt, line)
+        add_transaction_json(args, category_dict, column_key, date_key, amount_flt, line)
 
         count += 1
 
-    # Write dictionary to json file
-    with open(args.output_file, 'w') as file_out:
-        json.dump(category_dict, file_out, sort_keys=True, indent=4, ensure_ascii=False)
+    # Write date to files
+    save_transaction_json(args, category_dict)
+    save_transaction_csv(args, category_dict)
 
 
 def group_by_search_pattern(args):
@@ -312,15 +319,15 @@ def group_by_search_pattern(args):
         match = re.findall(args.search_pattern, line)
         if match:
             # Save to category_dict
-            save_transaction_json(args, category_dict, args.search_pattern, date_key, amount_flt, line)
+            add_transaction_json(args, category_dict, args.search_pattern, date_key, amount_flt, line)
         count += 1
 
-    # Write dictionary to json file
-    with open(args.output_file, 'w') as file_out:
-        json.dump(category_dict, file_out, sort_keys=True, indent=4, ensure_ascii=False)
+    # Write date to files
+    save_transaction_json(args, category_dict)
+    save_transaction_csv(args, category_dict)
 
 
-def save_transaction_json(args, category_dict, key, date_key, amount_flt, line):
+def add_transaction_json(args, category_dict, key, date_key, amount_flt, line):
     temp_category_dict = {
         "Total": 0,
         "Transactions": [],
@@ -337,6 +344,31 @@ def save_transaction_json(args, category_dict, key, date_key, amount_flt, line):
 
     category_dict[key]["Transactions"].append(line)
     category_dict[key]["Total"] += amount_flt
+
+
+def save_transaction_json(args, category_dict):
+    # Write dictionary to json file
+    with open(args.output_file_json, 'w') as file_out:
+        json.dump(category_dict, file_out, sort_keys=True, indent=4, ensure_ascii=False)
+
+
+def save_transaction_csv(args, category_dict):
+    with open(args.output_file_csv, 'w', newline='') as file_out:
+        # Writing header
+        fieldnames = ['Key', "{} Date".format(args.date_period), "{} Total".format(args.date_period), 'Total']
+        writer = csv.DictWriter(file_out, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for key1, value1 in category_dict.items():
+            count = 0
+            for key2, value2 in value1[args.date_period].items():
+                if count == 0:
+                    writer.writerow({"Key": key1, "Total": value1["Total"], "{} Date".format(args.date_period): key2, "{} Total".format(args.date_period): value2})
+                else:
+                    writer.writerow({"{} Date".format(args.date_period): key2, "{} Total".format(args.date_period): value2})
+                count += 1
+            # Skip a line
+            writer.writerow({"Key": ""})
 
 
 def get_column_value(column, line, header_line):
