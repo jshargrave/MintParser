@@ -23,9 +23,9 @@ def get_args():
         ],
         "GroupByColumnValue": [
             "transactions_file",
+            "categorize_column",
             "output_file",
             "date_period",
-            "categorize_column",
             "date_column",
             "amount_column",
         ],
@@ -40,9 +40,9 @@ def get_args():
     }
 
     usage = " Mint_Parser.py [-h]\n" \
-            "                       --action GroupByPatternFile --transactions_file TRANSACTIONS_FILE --pattern_file PATTERN_FILE\n" \
-            "                       --action GroupByColumnValue --transactions_file TRANSACTIONS_FILE --categorize_column CATEGORIZE_COLUMN\n" \
-            "                       --action GroupBySearchPattern --transactions_file TRANSACTIONS_FILE --search_pattern SEARCH_PATTERN\n"
+            "                       --action GroupByPatternFile --pattern_file PATTERN_FILE\n" \
+            "                       --action GroupByColumnValue --categorize_column CATEGORIZE_COLUMN\n" \
+            "                       --action GroupBySearchPattern --search_pattern SEARCH_PATTERN\n"
 
     parser = argparse.ArgumentParser(description='Used to process arguments passed to the Mint_Parser.py.', usage=usage)
 
@@ -55,6 +55,7 @@ def get_args():
     parser.add_argument('--categorize_column', default="Category", help='Column to group transactions by. Must match to a column name in --transactions_file')
     parser.add_argument('--date_column', default="Date", help='Column to extract the amount date from. Must match a column name in --transactions_file')
     parser.add_argument('--amount_column', default="Amount", help='Column to extract the amount from. Must match a column name in --transactions_file')
+    parser.add_argument("--user_interface", type=str2bool, nargs='?', const=True, default=True, help='Can be used to disable user interface.  Any requests for argument values will result in a exception being thrown.')
 
     args = parser.parse_args()
 
@@ -62,9 +63,9 @@ def get_args():
     # Make sure action was passed
     if args.action is None:
         msg = "--action argument must be passed. {}".format(add_help)
-        args.action = request_arg(msg, action_choices, True)
+        args.action = request_arg(args, msg, action_choices, True)
         if args.action is None:
-            raise argparse.ArgumentError("Error: " + msg)
+            parser.error(msg)
 
     # See if we are missing any arguments
     for a in args.action:
@@ -72,21 +73,36 @@ def get_args():
             if key not in vars(args).keys() or vars(args)[key] is None:
                 msg = "The argument --{} is required when passing the argument --action {}. {}".format(key, ", ".join(args.action), add_help)
                 if key == "date_period":
-                    vars(args)[key] = request_arg(msg, date_period_choices)
+                    vars(args)[key] = request_arg(args, msg, date_period_choices)
                 else:
-                    vars(args)[key] = request_arg(msg)
+                    vars(args)[key] = request_arg(args, msg)
                 if key not in vars(args).keys() or vars(args)[key] is None:
-                    raise argparse.ArgumentError("Error: " + msg)
+                    parser.error(msg)
             elif key in valid_file_args and not os.path.exists(vars(args)[key]):
                 msg = "Argument --{} does not point to a valid file ({}). {}".format(key, vars(args)[key], add_help)
-                vars(args)[key] = request_arg(msg)
+                vars(args)[key] = request_arg(args, msg)
                 if not os.path.exists(vars(args)[key]):
-                    raise argparse.ArgumentError("Error: " + msg)
+                    parser.error(msg)
 
     return args
 
 
-def request_arg(msg, choices=None, allow_multiples=False):
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
+def request_arg(args, msg, choices=None, allow_multiples=False):
+    # If user interface disabled, then just return None
+    if not args.user_interface:
+        return None
+
     print(msg)
 
     # List of choice was passed
