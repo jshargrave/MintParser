@@ -67,8 +67,8 @@ def get_args():
     parser.add_argument('--amount_column', default="Amount", help='Column to extract the amount from. Must match a column name in --transactions_file')
 
     # Optional arguments
-    parser.add_argument('--start_date', help='The start date to start searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to the argument then use {}'.format(date_format.replace("%", "%%")))
-    parser.add_argument('--end_date', help='The end date to stop searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to the argument then use {}'.format(date_format.replace("%", "%%")))
+    parser.add_argument('--start_date', help='The start date to start searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to that argument then use {}'.format(date_format.replace("%", "%%")))
+    parser.add_argument('--end_date', help='The end date to stop searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to that argument then use {}'.format(date_format.replace("%", "%%")))
     parser.add_argument("--user_interface", type=str2bool, nargs='?', const=True, default=True, help='Can be used to disable user interface.  Any requests for argument values will result in a exception being thrown.')
 
     args = parser.parse_args()
