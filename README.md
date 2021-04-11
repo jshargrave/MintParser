@@ -5,6 +5,9 @@ Technically MintParser supports any csv formatted transaction document.  You onl
 
 MintParser supports a user interface but all arguments required can be provided from the command line to allow for a user free interaction run.
 
+# Requirements
+Python 3
+
 # Motivation
 I've been using Mint.com for serveral years now for tracking all of transactions accross multiple accounts.  Mint.com makes easy to add accounts and record transactions that occur.  The problem I find is that Mint.com often makes mistakes in how it categorizes transactions.  Often they will get added to the completely wrong category.  Further more there is now way to setup rules to add them automatically to the correct category.  IF I wanted to do it in Mint.com I would have to update each miscategorized transaction manually.
 
