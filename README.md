@@ -38,18 +38,32 @@ Mint_Parser.py [-h]
 ~~~
 
 ## Arguments
-List of arguements below.  I go into further detail about the usage and values of each argument below.
+List of arguements below.  I go into further detail about the usage and values of each argument below.  If argument only takes a list of values then those values are listed.  Otherwise the argument name is repeated with all upercase to indicate that it needs to be replaced with a real value.
 ~~~
---action            ACTION	        List of actions to perform
---transactions_file TRANSACTION_FILE    Transactions file from Mint.com
---pattern_file      PATTERN_FILE        Pattern file contain series of Regular Expressions
---categorize_column CATEGORIZE_COLUMN   Column to group transactions by
---search_pattern    SEARCH_PATTERN      Search pattern to group transactions by
---output_file_json  OUTPUT_FILE_JSON    Output file where results are written
---output_file_csv   OUTPUT_FILE_CSV     Output file where results are written
---date_period       DATE_PERIOD         Date period to group matching transactions by
---date_column       DATE_COLUMN         Column in --transactions_file to extract date from
---amount_column     AMOUNT_COLUMN       Column in --transactions_file to extract amount from
+--action            GroupByPatternFile		List of actions to perform
+		    GroupByColumnValue
+		    GroupBySearchPattern	        
+--transactions_file TRANSACTION_FILE    	Transactions file from Mint.com
+--pattern_file      PATTERN_FILE        	Pattern file contain series of Regular Expressions
+--categorize_column CATEGORIZE_COLUMN   	Column to group transactions by
+--search_pattern    SEARCH_PATTERN      	Search pattern to group transactions by
+--output_file_json  OUTPUT_FILE_JSON    	Output file where results are written
+--output_file_csv   OUTPUT_FILE_CSV     	Output file where results are written
+--date_period       Real			Date period to group matching transactions by
+		    Daily
+		    Biweekly
+		    Weekly
+		    Monthly
+		    Yearly         		
+--date_format       DATE_FORMAT			The format of the date in the --transaction_file
+--date_column       DATE_COLUMN         	Column in --transactions_file to extract date from
+--amount_column     AMOUNT_COLUMN       	Column in --transactions_file to extract amount from
+
+-----------------------------------(Optional)-------------------------------------------------------
+--start_date        START_DATE			Start date to start searching for transactions
+--end_date          END_DATE			End date to stop searching for transactions
+--user_interface    True			Enable or disable user interface
+		    False								
 ~~~
 
 ### --action
@@ -83,13 +97,22 @@ Where the results are written.  The default value is output.json.  Note that if 
 Where the results are written.  The default value is output.csv.  Note that if you run a query with multiple actions then the action name will be appeneded to the end of the output file to keep from overwriting results.
 
 ### --date_period
-Argument used to specify what date period to seperate the grouped transactions by.  Valid values are "Daily", "Weekly", "Monthly", "Yearly".
+Argument used to specify what date period to seperate the grouped transactions by.  Valid values are "Real", "Daily", "Weekly", "Biweekly", "Monthly", "Yearly".  The Real option will not modify that date at all and transactions will be grouped by whatever dates match in the --transactions_file.
+
+### --date_format
+Can be used to override the date format.  This value is used to parse the date in the --transactions_file, --start_date, and --end_date.  The default is %m/%d/%Y.
 
 ### --date_column
 Name of the column to extract the date from.  Default value is "Date".  This value can be overwritten if you are using a transactions csv document that is not from Mint.com.
 
 ### --amount_column
 Name of the column to extract the amount from.  Default value is "Amount".  This value can be overwritten if you are using a transactions csv document that is not from Mint.com.
+
+### --start_date
+The start date to start searching for transactions. Enter the date in the same format as [--date_format](#--date_format), if nothing is passed to that argument then use %m/%d/%Y.
+
+### --end_date
+The end date to start searching for transactions. Enter the date in the same format as [--date_format](#--date_format), if nothing is passed to that argument then use %m/%d/%Y.
 
 ### --user_interface
 Can be used to disable the user interface.  Note that if any errors occur a exception will be thrown.  This argument implements a string to bool parsing function.  So it supports a series of values that can be interpreted as true/false.  Some of the values are 'yes', 'true', 't', 'y', '1', 'no', 'false', 'f', 'n', '0'.  An exception is thrown if an invalid value is passed.
@@ -100,7 +123,7 @@ Currently MintParser only outputs results in a json format.  These results are p
 Below are some example output obtained when running the MintParser using a pattern file shown below.
 
 
-## Pattern File Contents
+## Pattern File Contents Example
 ~~~
 {
 	"DEPOSIT CHECKS": 
@@ -110,7 +133,7 @@ Below are some example output obtained when running the MintParser using a patte
 }
 ~~~
 
-## Output File Contents JSON
+## Output File Contents JSON Example
 ~~~
     "DEPOSIT CHECKS": {
         "Monthly": {
@@ -141,6 +164,6 @@ Below are some example output obtained when running the MintParser using a patte
     },
 ~~~
 
-## Output File Contents CSV
+## Output File Contents CSV Example
 ![image](https://user-images.githubusercontent.com/14623411/114281748-054e8000-99f5-11eb-8d79-db34c0046c6a.png)
 
