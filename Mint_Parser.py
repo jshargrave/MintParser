@@ -12,7 +12,7 @@ def get_args():
     action_choices = ["GroupByPatternFile", "GroupByColumnValue", "GroupBySearchPattern"]
     date_period_choices = ["Real", "Daily", "Biweekly", "Weekly", "Monthly", "Yearly"]
     valid_file_args = ["transactions_file", "pattern_file"]
-    date_format = "%m/%d/%Y"
+    date_format = r"%m/%d/%Y"
     add_help = "Pass the -h argument for more information"
     actions_args_dict = {
         "GroupByPatternFile": [
@@ -62,14 +62,13 @@ def get_args():
     parser.add_argument('--output_file_csv', default="output.csv", help='File to output the csv results to.')
     parser.add_argument('--date_period', choices=date_period_choices, help='The period of summation to use on the transactions when building the report. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices)))
     parser.add_argument('--date_format', default=date_format, help='The date format the the --transactions_file')
-
     parser.add_argument('--categorize_column', default="Category", help='Column to group transactions by. Must match to a column name in --transactions_file')
     parser.add_argument('--date_column', default="Date", help='Column to extract the amount date from. Must match a column name in --transactions_file')
     parser.add_argument('--amount_column', default="Amount", help='Column to extract the amount from. Must match a column name in --transactions_file')
 
     # Optional arguments
-    parser.add_argument('--start_date', help='The start date to search for transactions. Enter the date in the same format as --date_format, if nothing is passed to the argument then use {}'.format(date_format))
-    parser.add_argument('--end_date', help='The end date to search for transactions. Enter the date in the same format as --date_format, if nothing is passed to the argument then use {}'.format(date_format))
+    parser.add_argument('--start_date', help='The start date to start searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to the argument then use {}'.format(date_format.replace("%", "%%")))
+    parser.add_argument('--end_date', help='The end date to stop searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to the argument then use {}'.format(date_format.replace("%", "%%")))
     parser.add_argument("--user_interface", type=str2bool, nargs='?', const=True, default=True, help='Can be used to disable user interface.  Any requests for argument values will result in a exception being thrown.')
 
     args = parser.parse_args()
@@ -246,7 +245,7 @@ def group_by_pattern_file(args):
         for key, value in category_dict_pattern.items():
             for pattern in value:
                 match = re.findall(pattern, line)
-                if match:
+                if match and is_date_in_valid_range(args, date_str):
                     found_match = True
 
                     # Save to category_dict
@@ -258,7 +257,7 @@ def group_by_pattern_file(args):
                 break
 
         # Record the transaction if no pattern matched it
-        if not found_match:
+        if not found_match and is_date_in_valid_range(args, date_str):
             key = "NO_MATCH"
 
             # Save to category_dict
@@ -303,7 +302,8 @@ def group_by_column_value(args):
         amount_flt = float(get_column_value(args.amount_column, line, header_text))
 
         # Save to category_dict
-        add_transaction_json(args, category_dict, column_key, date_key, amount_flt, line)
+        if is_date_in_valid_range(args, date_str):
+            add_transaction_json(args, category_dict, column_key, date_key, amount_flt, line)
 
         count += 1
 
@@ -342,7 +342,7 @@ def group_by_search_pattern(args):
         amount_flt = float(get_column_value(args.amount_column, line, header_text))
 
         match = re.findall(args.search_pattern, line)
-        if match:
+        if match and is_date_in_valid_range(args, date_str):
             # Save to category_dict
             add_transaction_json(args, category_dict, args.search_pattern, date_key, amount_flt, line)
         count += 1
@@ -415,6 +415,20 @@ def get_column_value(column, line, header_line):
 
 def is_date_in_valid_range(args, date_str):
     date_obj = datetime.strptime(date_str, args.date_format)
+
+    if args.start_date:
+        # Check if date is before start date
+        start_date_obj = datetime.strptime(args.start_date, args.date_format)
+        if date_obj < start_date_obj:
+            return False
+
+    if args.end_date:
+        # Check if date is after end date
+        end_date_obj = datetime.strptime(args.end_date, args.date_format)
+        if date_obj > end_date_obj:
+            return False
+
+    return True
 
 
 def get_date_key(args, date_str):
