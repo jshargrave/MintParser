@@ -21,6 +21,7 @@ def get_args():
             "output_file_csv",
             "date_period",
             "date_column",
+            "date_format",
             "amount_column",
         ],
         "GroupByColumnValue": [
@@ -29,6 +30,7 @@ def get_args():
             "output_file_json",
             "output_file_csv",
             "date_period",
+            "date_format",
             "date_column",
             "amount_column",
         ],
@@ -38,6 +40,7 @@ def get_args():
             "output_file_json",
             "output_file_csv",
             "date_period",
+            "date_format",
             "date_column",
             "amount_column",
         ],
@@ -57,13 +60,15 @@ def get_args():
     parser.add_argument('--output_file_json', default="output.json", help='File to output the json results to.')
     parser.add_argument('--output_file_csv', default="output.csv", help='File to output the csv results to.')
     parser.add_argument('--date_period', choices=date_period_choices, help='The period of summation to use on the transactions when building the report. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices)))
+    parser.add_argument('--date_format', default="%m/%d/%Y", help='The date format the the --transactions_file')
+
     parser.add_argument('--categorize_column', default="Category", help='Column to group transactions by. Must match to a column name in --transactions_file')
     parser.add_argument('--date_column', default="Date", help='Column to extract the amount date from. Must match a column name in --transactions_file')
     parser.add_argument('--amount_column', default="Amount", help='Column to extract the amount from. Must match a column name in --transactions_file')
 
     # Optional arguments
-    parser.add_argument('--start_date', help='Column to extract the amount from. Must match a column name in --transactions_file')
-    parser.add_argument('--end_date', help='Column to extract the amount from. Must match a column name in --transactions_file')
+    parser.add_argument('--start_date', help='The start date to search for transactions')
+    parser.add_argument('--end_date', help='The end date to search for transactions')
     parser.add_argument("--user_interface", type=str2bool, nargs='?', const=True, default=True, help='Can be used to disable user interface.  Any requests for argument values will result in a exception being thrown.')
 
     args = parser.parse_args()
@@ -392,6 +397,10 @@ def get_column_value(column, line, header_line):
     return ""
 
 
+def is_date_range_valid(args, date_str):
+    pass
+
+
 def get_date_key(args, date_str):
     # Set date-key to date_str just in case no if condition pass
     date_key = date_str
@@ -400,7 +409,7 @@ def get_date_key(args, date_str):
     if args.date_period == "Real":
         date_key = date_str
     else:
-        date_obj = datetime.strptime(date_str, "%m/%d/%Y")
+        date_obj = datetime.strptime(date_str, args.date_format)
 
         # Nothing need to be done here
         if args.date_period == "Daily":
