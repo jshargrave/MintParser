@@ -10,7 +10,7 @@ import os
 
 def get_args():
     action_choices = ["GroupByPatternFile", "GroupByColumnValue", "GroupBySearchPattern"]
-    date_period_choices = ["Daily", "Weekly", "Monthly", "Yearly"]
+    date_period_choices = ["Real", "Daily", "Biweekly", "Weekly", "Monthly", "Yearly"]
     valid_file_args = ["transactions_file", "pattern_file"]
     add_help = "Pass the -h argument for more information"
     actions_args_dict = {
@@ -60,6 +60,10 @@ def get_args():
     parser.add_argument('--categorize_column', default="Category", help='Column to group transactions by. Must match to a column name in --transactions_file')
     parser.add_argument('--date_column', default="Date", help='Column to extract the amount date from. Must match a column name in --transactions_file')
     parser.add_argument('--amount_column', default="Amount", help='Column to extract the amount from. Must match a column name in --transactions_file')
+
+    # Optional arguments
+    parser.add_argument('--start_date', help='Column to extract the amount from. Must match a column name in --transactions_file')
+    parser.add_argument('--end_date', help='Column to extract the amount from. Must match a column name in --transactions_file')
     parser.add_argument("--user_interface", type=str2bool, nargs='?', const=True, default=True, help='Can be used to disable user interface.  Any requests for argument values will result in a exception being thrown.')
 
     args = parser.parse_args()
@@ -389,36 +393,52 @@ def get_column_value(column, line, header_line):
 
 
 def get_date_key(args, date_str):
+    # Set date-key to date_str just in case no if condition pass
     date_key = date_str
-    date_obj = datetime.strptime(date_str, "%m/%d/%Y")
 
-    # Nothing need to be done here
-    if args.date_period == "Daily":
-        date_key = date_obj.strftime("%Y-%m-%d")
+    # Don't group by date, just convert to common format
+    if args.date_period == "Real":
+        date_key = date_str
+    else:
+        date_obj = datetime.strptime(date_str, "%m/%d/%Y")
 
-    # Need to set date_obj to nearest week
-    elif args.date_period == "Weekly":
-        # 1st week
-        if date_obj.day < 8:
-            date_key = date_obj.strftime("%Y-%m-01 to %Y-%m-07")
-        # 2nd week
-        elif date_obj.day < 15:
-            date_key = date_obj.strftime("%Y-%m-08 to %Y-%m-14")
-        # 3rd week
-        elif date_obj.day < 22:
-            date_key = date_obj.strftime("%Y-%m-15 to %Y-%m-21")
-        # 4th week
-        else:
-            last_day = calendar.monthrange(date_obj.year, date_obj.month)[1]
-            date_key = date_obj.strftime("%Y-%m-22 to %Y-%m-{}".format(last_day))
+        # Nothing need to be done here
+        if args.date_period == "Daily":
+            date_key = date_obj.strftime("%Y-%m-%d")
 
-    # Need to set date_obj to current month
-    elif args.date_period == "Monthly":
-        date_key = date_obj.strftime("%Y-%m")
+        # Return back the date range of 1 week
+        elif args.date_period == "Weekly":
+            # 1st week
+            if date_obj.day < 8:
+                date_key = date_obj.strftime("%Y-%m-01 to %Y-%m-07")
+            # 2nd week
+            elif date_obj.day < 15:
+                date_key = date_obj.strftime("%Y-%m-08 to %Y-%m-14")
+            # 3rd week
+            elif date_obj.day < 22:
+                date_key = date_obj.strftime("%Y-%m-15 to %Y-%m-21")
+            # 4th week
+            else:
+                last_day = calendar.monthrange(date_obj.year, date_obj.month)[1]
+                date_key = date_obj.strftime("%Y-%m-22 to %Y-%m-{}".format(last_day))
 
-    # Need to set date_obj to current year
-    elif args.date_period == "Yearly":
-        date_key = date_obj.strftime("%Y")
+        # Return back the date range of 2 weeks
+        elif args.date_period == "Biweekly":
+            # Weeks 1 and 2
+            if date_obj.day < 15:
+                date_key = date_obj.strftime("%Y-%m-01 to %Y-%m-14")
+            # Weeks 3 and 4
+            else:
+                last_day = calendar.monthrange(date_obj.year, date_obj.month)[1]
+                date_key = date_obj.strftime("%Y-%m-15 to %Y-%m-{}".format(last_day))
+
+        # Need to set date_obj to current month
+        elif args.date_period == "Monthly":
+            date_key = date_obj.strftime("%Y-%m")
+
+        # Need to set date_obj to current year
+        elif args.date_period == "Yearly":
+            date_key = date_obj.strftime("%Y")
 
     # Return date key
     return date_key
