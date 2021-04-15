@@ -59,23 +59,90 @@ def get_args():
 
     parser = argparse.ArgumentParser(description='Used to process arguments passed to the Mint_Parser.py.', usage=usage)
 
-    parser.add_argument('--action', nargs='+', choices=action_choices, help='List of actions to perform. Can be one or multiples of the following: \"{}\"'.format("\" \"".join(action_choices)))
-    parser.add_argument('--transactions_file', default="transactions.csv", help='Used to point to the transaction file exported from Mint. Default is transactions.csv.')
-    parser.add_argument('--categorize_column', default="Category", help='Column to group transactions by. Must match to a column name in --transactions_file')
-    parser.add_argument('--pattern_file', default="category_patterns_default.json", help='JSON file that contains a series of regular expressions to match patterns in the --transactions_file. See category_patterns_default.json for an example.')
-    parser.add_argument('--search_pattern', help='Regular expression to use for searching through transactions.')
-    parser.add_argument('--output_file_json', default="output.json", help='File to output the json results to.')
-    parser.add_argument('--output_file_csv', default="output.csv", help='File to output the csv results to.')
-    parser.add_argument('--date_format', default=date_import_format, help='The date format the the --transactions_file')
-    parser.add_argument('--date_period', choices=date_period_choices, help='The period of summation to use on the transactions when building the report. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices)))
-    parser.add_argument('--date_range', choices=date_range_choices, help='The date range to parse. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices)))
-    parser.add_argument('--date_column', default="Date", help='Column to extract the amount date from. Must match a column name in --transactions_file')
-    parser.add_argument('--amount_column', default="Amount", help='Column to extract the amount from. Must match a column name in --transactions_file')
+    parser.add_argument(
+        '--action',
+        nargs='+',
+        choices=action_choices,
+        help='List of actions to perform. Can be one or multiples of the '
+             'following: \"{}\"'.format("\" \"".join(action_choices))
+    )
+    parser.add_argument(
+        '--transactions_file',
+        default="transactions.csv",
+        help='Used to point to the transaction file exported from Mint. Default is transactions.csv.'
+    )
+    parser.add_argument(
+        '--categorize_column',
+        default="Category",
+        help='Column to group transactions by. Must match to a column name in --transactions_file'
+    )
+    parser.add_argument(
+        '--pattern_file',
+        default="category_patterns_default.json",
+        help='JSON file that contains a series of regular expressions to match patterns in the --transactions_file. '
+             'See category_patterns_default.json for an example.'
+    )
+    parser.add_argument(
+        '--search_pattern',
+        help='Regular expression to use for searching through transactions.'
+    )
+    parser.add_argument(
+        '--output_file_json',
+        default="output.json",
+        help='File to output the json results to.'
+    )
+    parser.add_argument(
+        '--output_file_csv',
+        default="output.csv",
+        help='File to output the csv results to.'
+    )
+    parser.add_argument(
+        '--date_format',
+        default=date_import_format,
+        help='The date format the the --transactions_file'
+    )
+    parser.add_argument(
+        '--date_period',
+        choices=date_period_choices,
+        help='The period of summation to use on the transactions when building the report. Can be one of the '
+             'following: \"{}\"'.format("\" \"".join(date_period_choices))
+    )
+    parser.add_argument(
+        '--date_range',
+        choices=date_range_choices,
+        help='The date range to parse. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices))
+    )
+    parser.add_argument(
+        '--date_column',
+        default="Date",
+        help='Column to extract the amount date from. Must match a column name in --transactions_file'
+    )
+    parser.add_argument(
+        '--amount_column',
+        default="Amount",
+        help='Column to extract the amount from. Must match a column name in --transactions_file'
+    )
 
     # Optional arguments
-    parser.add_argument('--start_date', help='The start date to start searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to that argument then use {}'.format(date_import_format.replace("%", "%%")))
-    parser.add_argument('--end_date', help='The end date to stop searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to that argument then use {}'.format(date_import_format.replace("%", "%%")))
-    parser.add_argument("--user_interface", type=str2bool, nargs='?', const=True, default=True, help='Can be used to disable user interface.  Any requests for argument values will result in a exception being thrown.')
+    parser.add_argument(
+        '--start_date',
+        help='The start date to start searching for transactions. Enter the date in the same format as --date_format, '
+             'if nothing is passed to that argument then use {}'.format(date_import_format.replace("%", "%%"))
+    )
+    parser.add_argument(
+        '--end_date',
+        help='The end date to stop searching for transactions. Enter the date in the same format as --date_format, if '
+             'nothing is passed to that argument then use {}'.format(date_import_format.replace("%", "%%"))
+    )
+    parser.add_argument(
+        "--user_interface",
+        type=str2bool,
+        nargs='?',
+        const=True,
+        default=True,
+        help='Can be used to disable user interface.  Any requests for argument values will result in a exception '
+             'being thrown.'
+    )
 
     args = parser.parse_args()
 
@@ -92,7 +159,8 @@ def get_args():
         for key in actions_args_dict[a]:
             # If argument was not passed
             if key not in vars(args).keys() or vars(args)[key] is None:
-                msg = "The argument --{} is required when passing the argument --action {}. {}".format(key, ", ".join(args.action), add_help)
+                msg = "The argument --{} is required when passing the argument --action {}. " \
+                      "{}".format(key, ", ".join(args.action), add_help)
                 if key == "date_period":
                     vars(args)[key] = request_arg(args, msg, date_period_choices)
                 elif key == "date_range":
@@ -456,9 +524,17 @@ def save_transaction_csv(args, category_dict):
             count = 0
             for key2, value2 in value1[args.date_period].items():
                 if count == 0:
-                    writer.writerow({"Key": key1, "Total": value1["Total"], "{} Date".format(args.date_period): key2, "{} Total".format(args.date_period): value2})
+                    writer.writerow({
+                        "Key": key1,
+                        "Total": value1["Total"],
+                        "{} Date".format(args.date_period): key2,
+                        "{} Total".format(args.date_period): value2
+                    })
                 else:
-                    writer.writerow({"{} Date".format(args.date_period): key2, "{} Total".format(args.date_period): value2})
+                    writer.writerow({
+                        "{} Date".format(args.date_period): key2,
+                        "{} Total".format(args.date_period): value2
+                    })
                 count += 1
             # Skip a line
             writer.writerow({"Key": ""})
