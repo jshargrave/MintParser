@@ -1,5 +1,5 @@
 # MintParser
-This is a small tool that attempts to parse Mint.com Transaction data in a more useful format.  The idea is that the user has complete control over how transactions are grouped together using Regular Expressions and arguemnts passed to the tool.  Transactions are grouped using a pattern to search for and a date period to group them by.
+This is a small tool that parses Mint.com Transaction data in a more useful format.  The idea is that the user has complete control over how transactions are grouped together using Regular Expressions and arguemnts passed to the tool.  Transactions are grouped using a pattern to search for and a date period to group them by.
 
 Technically MintParser supports any csv formatted transaction document.  You only need to override a few arguments that are defaulted to work for Mint.com Transactions.  You will need to tell it which columns contain the amount and date information.  That is it.
 
@@ -57,6 +57,12 @@ List of arguements below.  I go into further detail about the usage and values o
 		    Yearly         		
 --date_format       DATE_FORMAT			The format of the date in the --transaction_file
 --date_column       DATE_COLUMN         	Column in --transactions_file to extract date from
+--date_range        All				The date range to parse transactions
+		    YTD
+		    Year
+		    CurrentMonth
+		    PreviousMonth
+		    Custom
 --amount_column     AMOUNT_COLUMN       	Column in --transactions_file to extract amount from
 
 -----------------------------------(Optional)-------------------------------------------------------
@@ -104,6 +110,9 @@ Can be used to override the date format.  This value is used to parse the date i
 
 ### --date_column
 Name of the column to extract the date from.  Default value is "Date".  This value can be overwritten if you are using a transactions csv document that is not from Mint.com.
+
+### --date_range
+The date_range argument is used to determine what the date range is that the transactions should be parsed.  Valid values are "All", "YTD", "Year", "CurrentMonth", "PreviousMonth", "Custom".  If a "Custom" value is entered then the user will be prompted to enter dates for arguments [--start_date](#--start_date) and [--end_date](#--end_date).
 
 ### --amount_column
 Name of the column to extract the amount from.  Default value is "Amount".  This value can be overwritten if you are using a transactions csv document that is not from Mint.com.
