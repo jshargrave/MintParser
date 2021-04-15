@@ -7,12 +7,14 @@ import csv
 import re
 import os
 
+date_import_format = r"%m/%d/%Y"
+
 
 def get_args():
     action_choices = ["GroupByPatternFile", "GroupByColumnValue", "GroupBySearchPattern"]
     date_period_choices = ["Real", "Daily", "Biweekly", "Weekly", "Monthly", "Yearly"]
+    date_range_choices = ["All", "YTD", "Year", "CurrentMonth", "PreviousMonth", "Custom"]
     valid_file_args = ["transactions_file", "pattern_file"]
-    date_format = r"%m/%d/%Y"
     add_help = "Pass the -h argument for more information"
     actions_args_dict = {
         "GroupByPatternFile": [
@@ -23,6 +25,7 @@ def get_args():
             "date_period",
             "date_column",
             "date_format",
+            "date_range",
             "amount_column",
         ],
         "GroupByColumnValue": [
@@ -33,6 +36,7 @@ def get_args():
             "date_period",
             "date_format",
             "date_column",
+            "date_range",
             "amount_column",
         ],
         "GroupBySearchPattern": [
@@ -43,6 +47,7 @@ def get_args():
             "date_period",
             "date_format",
             "date_column",
+            "date_range",
             "amount_column",
         ],
     }
@@ -56,19 +61,20 @@ def get_args():
 
     parser.add_argument('--action', nargs='+', choices=action_choices, help='List of actions to perform. Can be one or multiples of the following: \"{}\"'.format("\" \"".join(action_choices)))
     parser.add_argument('--transactions_file', default="transactions.csv", help='Used to point to the transaction file exported from Mint. Default is transactions.csv.')
+    parser.add_argument('--categorize_column', default="Category", help='Column to group transactions by. Must match to a column name in --transactions_file')
     parser.add_argument('--pattern_file', default="category_patterns_default.json", help='JSON file that contains a series of regular expressions to match patterns in the --transactions_file. See category_patterns_default.json for an example.')
     parser.add_argument('--search_pattern', help='Regular expression to use for searching through transactions.')
     parser.add_argument('--output_file_json', default="output.json", help='File to output the json results to.')
     parser.add_argument('--output_file_csv', default="output.csv", help='File to output the csv results to.')
+    parser.add_argument('--date_format', default=date_import_format, help='The date format the the --transactions_file')
     parser.add_argument('--date_period', choices=date_period_choices, help='The period of summation to use on the transactions when building the report. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices)))
-    parser.add_argument('--date_format', default=date_format, help='The date format the the --transactions_file')
-    parser.add_argument('--categorize_column', default="Category", help='Column to group transactions by. Must match to a column name in --transactions_file')
+    parser.add_argument('--date_range', choices=date_range_choices, help='The date range to parse. Can be one of the following: \"{}\"'.format("\" \"".join(date_period_choices)))
     parser.add_argument('--date_column', default="Date", help='Column to extract the amount date from. Must match a column name in --transactions_file')
     parser.add_argument('--amount_column', default="Amount", help='Column to extract the amount from. Must match a column name in --transactions_file')
 
     # Optional arguments
-    parser.add_argument('--start_date', help='The start date to start searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to that argument then use {}'.format(date_format.replace("%", "%%")))
-    parser.add_argument('--end_date', help='The end date to stop searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to that argument then use {}'.format(date_format.replace("%", "%%")))
+    parser.add_argument('--start_date', help='The start date to start searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to that argument then use {}'.format(date_import_format.replace("%", "%%")))
+    parser.add_argument('--end_date', help='The end date to stop searching for transactions. Enter the date in the same format as --date_format, if nothing is passed to that argument then use {}'.format(date_import_format.replace("%", "%%")))
     parser.add_argument("--user_interface", type=str2bool, nargs='?', const=True, default=True, help='Can be used to disable user interface.  Any requests for argument values will result in a exception being thrown.')
 
     args = parser.parse_args()
@@ -84,14 +90,19 @@ def get_args():
     # See if we are missing any arguments
     for a in args.action:
         for key in actions_args_dict[a]:
+            # If argument was not passed
             if key not in vars(args).keys() or vars(args)[key] is None:
                 msg = "The argument --{} is required when passing the argument --action {}. {}".format(key, ", ".join(args.action), add_help)
                 if key == "date_period":
                     vars(args)[key] = request_arg(args, msg, date_period_choices)
+                elif key == "date_range":
+                    vars(args)[key] = request_arg(args, msg, date_range_choices)
+                    set_date_range(args)
                 else:
                     vars(args)[key] = request_arg(args, msg)
-                if key not in vars(args).keys() or vars(args)[key] is None:
-                    parser.error(msg)
+                    if key not in vars(args).keys() or vars(args)[key] is None:
+                        parser.error(msg)
+            # if argument was passed but does not point to a valid file
             elif key in valid_file_args and not os.path.exists(vars(args)[key]):
                 msg = "Argument --{} does not point to a valid file ({}). {}".format(key, vars(args)[key], add_help)
                 vars(args)[key] = request_arg(args, msg)
@@ -99,6 +110,68 @@ def get_args():
                     parser.error(msg)
 
     return args
+
+
+def set_date_range(args):
+    # "All", "YTD", "CurrentMonth", "PreviousMonth", "Year", "Week", "Day", "Custom"
+    if args.date_range == "All":
+        args.date_start = ""
+        args.date_end = ""
+    elif args.date_range == "YTD":
+        end_date_obj = datetime.now()
+        start_date_obj = end_date_obj.replace(month=1, day=1)
+        args.start_date = start_date_obj.strftime(date_import_format)
+        args.end_date = end_date_obj.strftime(date_import_format)
+    elif args.date_range == "CurrentMonth":
+        end_date_obj = datetime.now()
+        start_date_obj = end_date_obj.replace(day=1)
+        args.start_date = start_date_obj.strftime(date_import_format)
+        args.end_date = end_date_obj.strftime(date_import_format)
+    elif args.date_range == "PreviousMonth":
+        temp_date_obj = datetime.now()
+
+        # Get end month
+        if temp_date_obj.month == 1:
+            month = 12
+        else:
+            month = temp_date_obj.month - 1
+
+        # Get end day
+        end_day = calendar.monthrange(temp_date_obj.year, month)[1]
+
+        # Set end date
+        end_date_obj = temp_date_obj.replace(month=month, day=end_day)
+
+        # Set start date
+        start_date_obj = end_date_obj.replace(day=1)
+
+        # Set arguments
+        args.start_date = start_date_obj.strftime(date_import_format)
+        args.end_date = end_date_obj.strftime(date_import_format)
+    elif args.date_range == "Year":
+        end_date_obj = datetime.now()
+        start_date_obj = end_date_obj.replace(year=end_date_obj.year - 1)
+        args.start_date = start_date_obj.strftime(date_import_format)
+        args.end_date = end_date_obj.strftime(date_import_format)
+    elif args.date_range == "Custom":
+        # Request start date
+        msg = "Enter the start date in the same format as {}".format(date_import_format.replace("%", "%%"))
+        args.start_date = request_arg(args, msg)
+        try:
+            date_obj = datetime.strptime(args.start_date, date_import_format)
+            print(date_obj)
+        except ValueError:
+            print("Incorrect data format, should be {}".format(date_import_format.replace("%", "%%")))
+
+        # Request end date
+        msg = "Enter the end date in the same format as {}".format(date_import_format.replace("%", "%%"))
+        args.end_date = request_arg(args, msg)
+        try:
+            date_obj = datetime.strptime(args.end_date, date_import_format)
+            print(date_obj)
+        except ValueError:
+            print("Incorrect data format, should be {}".format(date_import_format.replace("%", "%%")))
+    pass
 
 
 def str2bool(v):
@@ -179,11 +252,6 @@ def main():
 
 
 def group_by_pattern_file(args):
-    temp_category_dict = {
-        "Total": 0,
-        "Transactions": [],
-        args.date_period: {},
-    }
     category_dict = {}
 
     # Check that transactions file is valid path before opening
@@ -384,7 +452,7 @@ def save_transaction_csv(args, category_dict):
         writer = csv.DictWriter(file_out, fieldnames=fieldnames)
         writer.writeheader()
 
-        for key1, value1 in category_dict.items():
+        for key1, value1 in sorted(category_dict.items()):
             count = 0
             for key2, value2 in value1[args.date_period].items():
                 if count == 0:
