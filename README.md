@@ -17,7 +17,7 @@ One helpful this is the Mint.com allows you to export all of your transactions. 
 
 This led me to think if only there was a way to quickly parse the transactions and group them using Regular Expressions.  That is when I started working on MintParser.  MintParser will take a series of Regular Expressions and searches the Mint.com transactions and groups them together by the matches and a date period.
 
-Once I got going I was able to calculate more accuratly things like income vs. spending similiar to what you see below.
+Once I got going I was able to calculate things like income vs. spending similiar to what you see below.
 ![image](https://user-images.githubusercontent.com/14623411/114279263-9703c080-99e8-11eb-8956-2d441924e368.png)
 
 
