@@ -40,36 +40,38 @@ Mint_Parser.py [-h]
 ## Arguments
 List of arguements below.  I go into further detail about the usage and values of each argument below.  If argument only takes a list of values then those values are listed.  Otherwise the argument name is repeated with all upercase to indicate that it needs to be replaced with a real value.
 ~~~
---action            GroupByPatternFile		List of actions to perform
-		    GroupByColumnValue
-		    GroupBySearchPattern	        
---transactions_file TRANSACTION_FILE    	Transactions file from Mint.com
---pattern_file      PATTERN_FILE        	Pattern file contain series of Regular Expressions
---categorize_column CATEGORIZE_COLUMN   	Column to group transactions by
---search_pattern    SEARCH_PATTERN      	Search pattern to group transactions by
---output_file_json  OUTPUT_FILE_JSON    	Output file where results are written
---output_file_csv   OUTPUT_FILE_CSV     	Output file where results are written
---date_period       Real			Date period to group matching transactions by
-		    Daily
-		    Biweekly
-		    Weekly
-		    Monthly
-		    Yearly         		
---date_format       DATE_FORMAT			The format of the date in the --transaction_file
---date_column       DATE_COLUMN         	Column in --transactions_file to extract date from
---date_range        All				The date range to parse transactions
-		    YTD
-		    Year
-		    CurrentMonth
-		    PreviousMonth
-		    Custom
---amount_column     AMOUNT_COLUMN       	Column in --transactions_file to extract amount from
+--action            			GroupByPatternFile			List of actions to perform
+		    			GroupByColumnValue
+		    			GroupBySearchPattern	        
+--transactions_file 		     	TRANSACTION_FILE    			Transactions file from Mint.com
+--transactions_file_search_pattern   	TRANSACTIONS_FILE_SEARCH_PATTERN 	Used to search for transaction files when one was not provided.
+--transactions_file_search_directory 	TRANSACTIONS_FILE_SEARCH_DIRECTORY 	Used to search for transaction files when one was not provided.
+--pattern_file      			PATTERN_FILE        			Pattern file contain series of Regular Expressions
+--categorize_column 			CATEGORIZE_COLUMN   			Column to group transactions by
+--search_pattern    			SEARCH_PATTERN      			Search pattern to group transactions by
+--output_file_json  			OUTPUT_FILE_JSON    			Output file where results are written
+--output_file_csv   			OUTPUT_FILE_CSV     			Output file where results are written
+--date_period       			Real					Date period to group matching transactions by
+		    			Daily
+		    			Biweekly
+		    			Weekly
+		    			Monthly
+		    			Yearly         		
+--date_format       			DATE_FORMAT				The format of the date in the --transaction_file
+--date_column       			DATE_COLUMN         			Column in --transactions_file to extract date from
+--date_range        			All					The date range to parse transactions
+		    			YTD
+		    			Year
+		    			CurrentMonth
+		    			PreviousMonth
+		    			Custom
+--amount_column     			AMOUNT_COLUMN       			Column in --transactions_file to extract amount from
 
------------------------------------(Optional)-------------------------------------------------------
---start_date        START_DATE			Start date to start searching for transactions
---end_date          END_DATE			End date to stop searching for transactions
---user_interface    True			Enable or disable user interface
-		    False								
+------------------------------------------------------------(Optional)----------------------------------------------------------------------
+--start_date        			START_DATE				Start date to start searching for transactions
+--end_date          			END_DATE				End date to stop searching for transactions
+--user_interface    			True					Enable or disable user interface
+		    			False								
 ~~~
 
 ### --action
