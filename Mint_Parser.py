@@ -375,7 +375,12 @@ def group_by_pattern_file(args):
         date_key = get_date_key(args, date_str)
 
         # Extract amount
-        amount_flt = float(get_column_value(args.amount_column, line, header_text))
+        amount_str = get_column_value(args.amount_column, line, header_text)
+        match = re.search(r"\d+(\.\d+)?", amount_str)
+        if match:
+            amount_flt = float(match.group(0))
+        else:
+            amount_flt = 0
 
         found_match = False
         for key, value in category_dict_pattern.items():
@@ -544,7 +549,7 @@ def get_column_value(column, line, header_line):
     # Split the header
     header_line_split = header_line.split("\",\"")
     header_line_split[0] = header_line_split[0].lstrip('"')
-    header_line_split[-1] = header_line_split[-1].lstrip('"\n')
+    header_line_split[-1] = header_line_split[-1].rstrip('"\n')
 
     # Split the columns
     line_split = line.split("\",\"")
