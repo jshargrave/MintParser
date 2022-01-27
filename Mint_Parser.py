@@ -466,7 +466,12 @@ def group_by_column_value(args):
         column_key = get_column_value(args.categorize_column, line, header_text)
 
         # Extract amount
-        amount_flt = float(get_column_value(args.amount_column, line, header_text))
+        amount_str = get_column_value(args.amount_column, line, header_text)
+        match = re.search(r"\d+(\.\d+)?", amount_str)
+        if match:
+            amount_flt = float(match.group(0))
+        else:
+            amount_flt = 0
 
         # Save to category_dict
         if is_date_in_valid_range(args, date_str):
@@ -506,7 +511,12 @@ def group_by_search_pattern(args):
         date_key = get_date_key(args, date_str)
 
         # Extract amount
-        amount_flt = float(get_column_value(args.amount_column, line, header_text))
+        amount_str = get_column_value(args.amount_column, line, header_text)
+        match = re.search(r"\d+(\.\d+)?", amount_str)
+        if match:
+            amount_flt = float(match.group(0))
+        else:
+            amount_flt = 0
 
         match = re.findall(args.search_pattern, line)
         if match and is_date_in_valid_range(args, date_str):
@@ -524,6 +534,7 @@ def add_transaction_json(args, category_dict, key, date_key, amount_flt, line):
         "Total": 0,
         "Transactions": [],
         args.date_period: {},
+        "Transaction Count": 0
     }
 
     if key not in category_dict.keys():
@@ -536,6 +547,9 @@ def add_transaction_json(args, category_dict, key, date_key, amount_flt, line):
 
     category_dict[key]["Transactions"].append(line)
     category_dict[key]["Total"] += amount_flt
+    category_dict[key]["Transaction Count"] = len(category_dict[key]["Transactions"])
+    category_dict[key]["{} Average".format(args.date_period)] = round(category_dict[key]["Total"]/len(category_dict[key][args.date_period]), 2)
+    category_dict[key]["{} Count".format(args.date_period)] = len(category_dict[key][args.date_period])
 
 
 def save_transaction_json(args, category_dict):
@@ -547,7 +561,11 @@ def save_transaction_json(args, category_dict):
 def save_transaction_csv(args, category_dict):
     with open(args.output_file_csv, 'w', newline='') as file_out:
         # Writing header
-        fieldnames = ['Key', "{} Date".format(args.date_period), "{} Total".format(args.date_period), 'Total']
+        fieldnames = [
+            'Key', "{} Date".format(args.date_period), "Total",
+            "{} Total".format(args.date_period), "{} Average".format(args.date_period),
+            "{} Count".format(args.date_period), "Transaction Count"
+        ]
         writer = csv.DictWriter(file_out, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -559,7 +577,10 @@ def save_transaction_csv(args, category_dict):
                         "Key": key1,
                         "Total": value1["Total"],
                         "{} Date".format(args.date_period): key2,
-                        "{} Total".format(args.date_period): value2
+                        "{} Total".format(args.date_period): value2,
+                        "{} Average".format(args.date_period): round(value1["Total"]/len(value1[args.date_period]), 2),
+                        "{} Count".format(args.date_period): len(value1[args.date_period]),
+                        "Transaction Count": len(value1["Transactions"])
                     })
                 else:
                     writer.writerow({
