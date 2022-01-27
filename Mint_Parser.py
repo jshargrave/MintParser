@@ -1,4 +1,5 @@
 from datetime import datetime
+import fnmatch
 import calendar
 import argparse
 import json
@@ -14,6 +15,7 @@ def get_args():
     action_choices = ["GroupByPatternFile", "GroupByColumnValue", "GroupBySearchPattern"]
     date_period_choices = ["Real", "Daily", "Biweekly", "Weekly", "Monthly", "Yearly"]
     date_range_choices = ["All", "YTD", "Year", "CurrentMonth", "PreviousMonth", "Custom"]
+    transaction_file_choices = ["Enter Path"]
     valid_file_args = ["transactions_file", "pattern_file"]
     add_help = "Pass the -h argument for more information"
     actions_args_dict = {
@@ -70,6 +72,16 @@ def get_args():
         '--transactions_file',
         default="transactions.csv",
         help='Used to point to the transaction file exported from Mint. Default is transactions.csv.'
+    )
+    parser.add_argument(
+        '--transactions_file_search_pattern',
+        default="transactions*.csv",
+        help='Used to search for transaction files when one was not provided.'
+    )
+    parser.add_argument(
+        '--transactions_file_search_directory',
+        default=os.getcwd(),
+        help='Used to search for transaction files when one was not provided.'
     )
     parser.add_argument(
         '--categorize_column',
@@ -173,7 +185,14 @@ def get_args():
             # if argument was passed but does not point to a valid file
             elif key in valid_file_args and not os.path.exists(vars(args)[key]):
                 msg = "Argument --{} does not point to a valid file ({}). {}".format(key, vars(args)[key], add_help)
-                vars(args)[key] = request_arg(args, msg)
+
+                # Search for transaction files
+                for root, dirnames, filenames in os.walk(args.transactions_file_search_directory):
+                    for filename in fnmatch.filter(filenames, args.transactions_file_search_pattern):
+                        transaction_file_choices.insert(0, os.path.join(root, filename))
+
+                # Query user to pick one of the found files or enter their own
+                vars(args)[key] = request_arg(args, msg, transaction_file_choices)
                 if not os.path.exists(vars(args)[key]):
                     parser.error(msg)
 
@@ -269,7 +288,7 @@ def request_arg(args, msg, choices=None, allow_multiples=False):
 
         # User can select a list of values for the argument
         if allow_multiples:
-            user_input = input("Pick a space separated list of numbers for the argument value now... ")
+            user_input = input("Enter a space separated list of numbers for the argument value now... ")
             print("")
             user_input = user_input.strip(" ")
             user_input_split = user_input.split(" ")
@@ -285,6 +304,13 @@ def request_arg(args, msg, choices=None, allow_multiples=False):
             print("")
 
             if user_input in choice_dict.keys():
+                if choice_dict[user_input] == "Enter Path":
+                    user_input = input("Enter the value for the argument now... ")
+                    print("")
+                    if user_input:
+                        return user_input
+                    else:
+                        return None
                 return choice_dict[user_input]
             else:
                 return None
